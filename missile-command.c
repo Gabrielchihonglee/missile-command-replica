@@ -1,62 +1,52 @@
 #include <ncurses.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 #define FRAME_WIDTH 125
 #define FRAME_HEIGHT 45
 
-#define TITLE_PADDING_HORIZONTAL 30
-#define TITLE_PADDING_VERTICAL 12
+#define START_PADDING_HORIZONTAL 30
+#define START_PADDING_VERTICAL 12
+
+void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[]) {
+    FILE *fp = fopen(file, "r");
+    char symbol;
+    int x, y;
+    wmove(screen, start_y, start_x);
+    while ((symbol = getc(fp)) != EOF) {
+        switch (symbol) {
+            case '.':
+                getyx(screen, y, x);
+                wmove(screen, y, x + 1);
+                break;
+            case '#':
+                waddch(screen, ACS_CKBOARD);
+                break;
+            case '\n':
+                getyx(screen, y, x);
+                wmove(screen, y + 1, start_x);
+                break;
+            default:
+                fprintf(stderr, "Unexpected character found in %s: '%c'", file, symbol);
+        }
+        wrefresh(screen);
+        nanosleep((const struct timespec[]){{0, 5000000L}}, NULL);
+    }
+}
 
 int main() {
     initscr();
     raw();
+    curs_set(0);
+
+    init_pair(1, COLOR_RED, COLOR_WHITE);
 
     WINDOW *start_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
-    curs_set(FALSE);
-    start_color();
-    init_pair(1, COLOR_RED, COLOR_WHITE);
     wattron(start_screen, COLOR_PAIR(1));
-    FILE *fp = fopen("graphics/missile-command-text", "r");
-    char symbol;
-    int y, x;
-    for (int i = 0; i < TITLE_PADDING_VERTICAL; i++) {
-        getyx(start_screen, y, x);
-        mvwaddch(start_screen, y, FRAME_WIDTH - 2, ACS_VLINE);
-        wmove(start_screen, y + 1, 0);
-    }
-    getyx(start_screen, y, x);
-    wmove(start_screen, y, x + TITLE_PADDING_HORIZONTAL);
-    while ((symbol = getc(fp)) != EOF) {
-        if (symbol == '#') {
-            waddch(start_screen, ACS_CKBOARD);
-        } else if (symbol == '\n') {
-            getyx(start_screen, y, x);
-            mvwaddch(start_screen, y, FRAME_WIDTH - 2, ACS_VLINE);
-            wrefresh(start_screen);
-            getyx(start_screen, y, x);
-            wmove(start_screen, y + 1, TITLE_PADDING_HORIZONTAL);
-        } else if (symbol == ' ') {
-            getyx(start_screen, y, x);
-            wmove(start_screen, y, x + 1);
-        } else {
-            perror("Unexpected character in missile-command-text");
-        }
-        wrefresh(start_screen);
-    }
-    for (int i = 0; i < TITLE_PADDING_VERTICAL; i++) {
-        getyx(start_screen, y, x);
-        mvwaddch(start_screen, y, FRAME_WIDTH - 2, ACS_VLINE);
-        wmove(start_screen, y + 1, 0);
-    }
-    for (int i = 0; i < FRAME_WIDTH - 2; i++) {
-        waddch(start_screen, ACS_HLINE);
-        wrefresh(start_screen);
-    }
-    waddch(start_screen, ACS_LRCORNER);
-    wrefresh(start_screen);
-    fclose(fp);
-    wattroff(start_screen, COLOR_PAIR(1));
+    drawFromFile(start_screen, START_PADDING_HORIZONTAL, START_PADDING_VERTICAL, "graphics/missile-command-text");
     wgetch(start_screen);
+    wattroff(start_screen, COLOR_PAIR(1));
+
     endwin();
 }
