@@ -81,44 +81,49 @@ int main() {
     usleep(500000);
 
     int start_explosion_pos[30][2];
-    for (int i = 0; i < 15; i++) {
-        start_explosion_pos[i][1] = rand() % 30 + 4; // x
-        start_explosion_pos[i][0] = rand() % 110 + 4; // y
+    for (int i = 0; i < 75; i++) {
+        if (i % 2 == 0) {
+            start_explosion_pos[i][0] = rand() % 119 + 1;
+            start_explosion_pos[i][1] = rand() % 39 + 1;
+        } else {
+            start_explosion_pos[i][0] = rand() % 65 + 28;
+            start_explosion_pos[i][1] = rand() % 21 + 10;
+        }
     }
 
     wattron(start_screen, COLOR_PAIR(2));
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 15; i++) {
         startScreenExplodeStage(start_screen, start_explosion_pos[i][0], start_explosion_pos[i][1], 0, 1);
     }
-    usleep(500000);
-    for (int i = 0; i < 10; i++) {
+    usleep(100000);
+    for (int i = 0; i < 15; i++) {
         startScreenExplodeStage(start_screen, start_explosion_pos[i][0], start_explosion_pos[i][1], 1, 2);
     }
-    usleep(500000);
-    for (int i = 0; i < 10; i++) {
+    usleep(100000);
+    for (int i = 0; i < 15; i++) {
         startScreenExplodeStage(start_screen, start_explosion_pos[i][0], start_explosion_pos[i][1], 2, 0);
     }
-    for (int i = 10; i < 20; i++) {
+    for (int i = 15; i < 30; i++) {
         startScreenExplodeStage(start_screen, start_explosion_pos[i][0], start_explosion_pos[i][1], 0, 1);
     }
-    usleep(500000);
-    for (int i = 10; i < 20; i++) {
+    usleep(100000);
+    for (int i = 15; i < 30; i++) {
         startScreenExplodeStage(start_screen, start_explosion_pos[i][0], start_explosion_pos[i][1], 1, 2);
     }
-    usleep(500000);
-    for (int i = 10; i < 20; i++) {
+    usleep(100000);
+    for (int i = 15; i < 30; i++) {
         startScreenExplodeStage(start_screen, start_explosion_pos[i][0], start_explosion_pos[i][1], 2, 0);
     }
-    for (int i = 20; i < 30; i++) {
+    for (int i = 30; i < 45; i++) {
         startScreenExplodeStage(start_screen, start_explosion_pos[i][0], start_explosion_pos[i][1], 0, 1);
     }
-    usleep(500000);
-    for (int i = 20; i < 30; i++) {
+    usleep(100000);
+    for (int i = 30; i < 45; i++) {
         startScreenExplodeStage(start_screen, start_explosion_pos[i][0], start_explosion_pos[i][1], 1, 2);
     }
-    usleep(500000);
-    for (int i = 20; i < 30; i++) {
+    usleep(100000);
+    for (int i = 30; i < 45; i++) {
         startScreenExplodeStage(start_screen, start_explosion_pos[i][0], start_explosion_pos[i][1], 2, 0);
     }
 
