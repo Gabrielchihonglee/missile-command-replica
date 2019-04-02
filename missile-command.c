@@ -140,6 +140,77 @@ int main() {
     wattron(start_screen, COLOR_PAIR(4));
     mvwprintw(start_screen, FRAME_HEIGHT - 1, FRAME_WIDTH / 2 - strlen("PRESS ANY KEY TO CONTINUE") / 2, "PRESS ANY KEY TO CONTINUE");
     wgetch(start_screen);
+    werase(start_screen);
+
+    WINDOW *main_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
+    keypad(main_screen, TRUE);
+    noecho();
+    wmove(main_screen, 0, 0);
+
+    wattron(main_screen, COLOR_PAIR(4));
+    drawFromFile(main_screen, 0, FRAME_HEIGHT - 6, "graphics/ground", 1);
+    wattron(main_screen, COLOR_PAIR(3));
+    drawFromFile(main_screen, 15, FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
+    wattron(main_screen, COLOR_PAIR(5));
+    drawFromFile(main_screen, 15, FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
+    wattron(main_screen, COLOR_PAIR(3));
+    drawFromFile(main_screen, 30, FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
+    wattron(main_screen, COLOR_PAIR(5));
+    drawFromFile(main_screen, 30, FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
+    wattron(main_screen, COLOR_PAIR(3));
+    drawFromFile(main_screen, 45, FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
+    wattron(main_screen, COLOR_PAIR(5));
+    drawFromFile(main_screen, 45, FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
+    wattron(main_screen, COLOR_PAIR(3));
+    drawFromFile(main_screen, 70, FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
+    wattron(main_screen, COLOR_PAIR(5));
+    drawFromFile(main_screen, 70, FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
+    wattron(main_screen, COLOR_PAIR(3));
+    drawFromFile(main_screen, 85, FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
+    wattron(main_screen, COLOR_PAIR(5));
+    drawFromFile(main_screen, 85, FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
+    wattron(main_screen, COLOR_PAIR(3));
+    drawFromFile(main_screen, 100, FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
+    wattron(main_screen, COLOR_PAIR(5));
+    drawFromFile(main_screen, 100, FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
+    //mvwaddch(main_screen, 10, 30, ACS_PLUS);
+
+    int input;
+    int cur_x = 30;
+    int cur_y = 10;
+
+    mvwaddch(main_screen, cur_y, cur_x, ACS_PLUS);
+
+    while (1) {
+        input = wgetch(main_screen);
+        switch(input) {
+            case KEY_LEFT:
+                mvwaddch(main_screen, cur_y, cur_x, ' ');
+                cur_x -= 1;
+                mvwaddch(main_screen, cur_y, cur_x, ACS_PLUS);
+                break;
+            case KEY_RIGHT:
+                mvwaddch(main_screen, cur_y, cur_x, ' ');
+                cur_x += 1;
+                mvwaddch(main_screen, cur_y, cur_x, ACS_PLUS);
+                break;
+            case KEY_UP:
+                mvwaddch(main_screen, cur_y, cur_x, ' ');
+                cur_y -= 1;
+                mvwaddch(main_screen, cur_y, cur_x, ACS_PLUS);
+                break;
+            case KEY_DOWN:
+                mvwaddch(main_screen, cur_y, cur_x, ' ');
+                cur_y += 1;
+                mvwaddch(main_screen, cur_y, cur_x, ACS_PLUS);
+                break;
+            case 'q':
+                endwin();
+                break;
+        }
+    }
+
+    //wgetch(main_screen);
 
     endwin();
 }
