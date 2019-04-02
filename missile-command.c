@@ -149,6 +149,7 @@ int main() {
     init_pair(8, COLOR_WHITE, COLOR_BLACK);
 
     WINDOW *start_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
+    wattron(start_screen, A_BOLD);
     wattron(start_screen, COLOR_PAIR(2));
     drawFromFile(start_screen, START_PADDING_HORIZONTAL, START_PADDING_VERTICAL, "graphics/missile-command-text", 1);
     wrefresh(start_screen);
@@ -191,6 +192,7 @@ int main() {
     werase(start_screen);
 
     WINDOW *main_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
+    wattron(main_screen, A_BOLD);
     keypad(main_screen, TRUE);
     noecho();
     nodelay(main_screen, TRUE);
