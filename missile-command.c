@@ -4,29 +4,36 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
+#include <pthread.h>
 
 #define FRAME_WIDTH 124
 #define FRAME_HEIGHT 40
 
 #define START_PADDING_HORIZONTAL 30
 #define START_PADDING_VERTICAL 12
-
-#define DRAW_MODE_ERASE 0
-#define DRAW_MODE_FILL 1
-
+/**
+#define SCORE_MISSILE 25
+#define SCORE_FIGHTER 50
+#define SCORE_UFO 60
+**/
 #define START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, stage_from, stage_to, color, wait) \
     wattron(start_screen, COLOR_PAIR(color)); \
     for (int i = num_from; i < num_to; i++) { \
         startScreenExplodeStage(start_screen, start_explosion_pos[i][0], start_explosion_pos[i][1], stage_from, stage_to); \
     } \
     usleep(wait);
+
 #define START_SCREEN_EXPLODE_LOOP(num_from, num_to, color) \
     START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, 0, 1, color, 50000); \
     START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, 1, 2, color, 50000); \
     START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, 2, 0, color, 1000);
 
+struct missile {
+    int x, y;
+    int vel_x, vel_y;
+};
+
 void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], int mode) {
-    srand(time(0));
     FILE *fp = fopen(file, "r");
     char symbol;
     int x, y;
@@ -84,7 +91,48 @@ void startScreenTextColor(WINDOW *screen, int color) {
     }
 }
 
+void *genHostileMissile(void *missiles) {
+    struct missile *hostile_missiles = missiles;
+    for (int i = 0; i < 10; i++) {
+        usleep(1000000);
+        hostile_missiles[i] = (struct missile) {
+            .x = (rand() % (FRAME_WIDTH - 1)),
+            .y = 0,
+            .vel_x = (rand() % 3 - 1),
+            .vel_y = 1,
+        };
+        if (hostile_missiles[i].x < FRAME_WIDTH / 2) {
+            hostile_missiles[i].vel_x = (rand() % 2);
+        } else {
+            hostile_missiles[i].vel_x = (rand() % 2 - 1);
+        }
+        //mvaddch(hostile_missiles[i].y, hostile_missiles[i].x, '.');
+    }
+    return NULL;
+}
+
+void updateHostileMissile(WINDOW *screen, struct missile *missiles) {
+    usleep(400000);
+    for (int i = 0; i < 10; i++) {
+        switch(missiles[i].vel_x) {
+            case 1:
+                mvwaddch(screen, missiles[i].y, missiles[i].x, '\\');
+                break;
+            case 0:
+                mvwaddch(screen, missiles[i].y, missiles[i].x, '|');
+                break;
+            case -1:
+                mvwaddch(screen, missiles[i].y, missiles[i].x, '/');
+                break;
+        }
+        missiles[i].x += missiles[i].vel_x;
+        missiles[i].y += missiles[i].vel_y;
+        mvwaddch(screen, missiles[i].y, missiles[i].x, 'O');
+    }
+}
+
 int main() {
+    srand(time(0));
     initscr();
     raw();
     curs_set(0);
@@ -145,64 +193,70 @@ int main() {
     WINDOW *main_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     keypad(main_screen, TRUE);
     noecho();
+    nodelay(main_screen, TRUE);
     wmove(main_screen, 0, 0);
 
     wattron(main_screen, COLOR_PAIR(4));
     drawFromFile(main_screen, 0, FRAME_HEIGHT - 6, "graphics/ground", 1);
-    wattron(main_screen, COLOR_PAIR(3));
-    drawFromFile(main_screen, 15, FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
-    wattron(main_screen, COLOR_PAIR(5));
-    drawFromFile(main_screen, 15, FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
-    wattron(main_screen, COLOR_PAIR(3));
-    drawFromFile(main_screen, 30, FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
-    wattron(main_screen, COLOR_PAIR(5));
-    drawFromFile(main_screen, 30, FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
-    wattron(main_screen, COLOR_PAIR(3));
-    drawFromFile(main_screen, 45, FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
-    wattron(main_screen, COLOR_PAIR(5));
-    drawFromFile(main_screen, 45, FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
-    wattron(main_screen, COLOR_PAIR(3));
-    drawFromFile(main_screen, 70, FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
-    wattron(main_screen, COLOR_PAIR(5));
-    drawFromFile(main_screen, 70, FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
-    wattron(main_screen, COLOR_PAIR(3));
-    drawFromFile(main_screen, 85, FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
-    wattron(main_screen, COLOR_PAIR(5));
-    drawFromFile(main_screen, 85, FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
-    wattron(main_screen, COLOR_PAIR(3));
-    drawFromFile(main_screen, 100, FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
-    wattron(main_screen, COLOR_PAIR(5));
-    drawFromFile(main_screen, 100, FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
-    //mvwaddch(main_screen, 10, 30, ACS_PLUS);
+
+    int cities_x_pos[6] = {15, 30, 45, 70, 85, 100};
+    for (int i = 0; i < 6; i++) {
+        wattron(main_screen, COLOR_PAIR(3));
+        drawFromFile(main_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
+        wattron(main_screen, COLOR_PAIR(5));
+        drawFromFile(main_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
+    }
 
     int input;
     int cur_x = 30;
     int cur_y = 10;
 
+    struct missile hostile_missiles[10];
+
+    wattron(main_screen, COLOR_PAIR(8));
     mvwaddch(main_screen, cur_y, cur_x, ACS_PLUS);
 
+    pthread_t missile_gen_thread;
+    pthread_create(&missile_gen_thread, NULL, genHostileMissile, hostile_missiles);
+
     while (1) {
+        updateHostileMissile(main_screen, hostile_missiles);
+        //if ((rand() % 1000) == 0) {
+        //    mvwaddch(main_screen, 0, 0, rand());
+        //}
         input = wgetch(main_screen);
         switch(input) {
             case KEY_LEFT:
-                mvwaddch(main_screen, cur_y, cur_x, ' ');
-                cur_x -= 1;
-                mvwaddch(main_screen, cur_y, cur_x, ACS_PLUS);
+                if (cur_x > 0) {
+                    wattron(main_screen, COLOR_PAIR(8));
+                    mvwaddch(main_screen, cur_y, cur_x, ' ');
+                    cur_x -= 1;
+                    mvwaddch(main_screen, cur_y, cur_x, ACS_PLUS);
+                }
                 break;
             case KEY_RIGHT:
-                mvwaddch(main_screen, cur_y, cur_x, ' ');
-                cur_x += 1;
-                mvwaddch(main_screen, cur_y, cur_x, ACS_PLUS);
+                if (cur_x < FRAME_WIDTH - 1) {
+                    wattron(main_screen, COLOR_PAIR(8));
+                    mvwaddch(main_screen, cur_y, cur_x, ' ');
+                    cur_x += 1;
+                    mvwaddch(main_screen, cur_y, cur_x, ACS_PLUS);
+                }
                 break;
             case KEY_UP:
-                mvwaddch(main_screen, cur_y, cur_x, ' ');
-                cur_y -= 1;
-                mvwaddch(main_screen, cur_y, cur_x, ACS_PLUS);
+                if (cur_y > 0) {
+                    wattron(main_screen, COLOR_PAIR(8));
+                    mvwaddch(main_screen, cur_y, cur_x, ' ');
+                    cur_y -= 1;
+                    mvwaddch(main_screen, cur_y, cur_x, ACS_PLUS);
+                }
                 break;
             case KEY_DOWN:
-                mvwaddch(main_screen, cur_y, cur_x, ' ');
-                cur_y += 1;
-                mvwaddch(main_screen, cur_y, cur_x, ACS_PLUS);
+                if (cur_y < FRAME_HEIGHT - 7) {
+                    wattron(main_screen, COLOR_PAIR(8));
+                    mvwaddch(main_screen, cur_y, cur_x, ' ');
+                    cur_y += 1;
+                    mvwaddch(main_screen, cur_y, cur_x, ACS_PLUS);
+                }
                 break;
             case 'q':
                 endwin();
