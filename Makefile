@@ -14,6 +14,3 @@ missile-command.o: missile-command.c
 
 clean:
 	rm -f $(OBJS) $(OUT)
-
-run: $(OUT)
-	./$(OUT)
