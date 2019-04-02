@@ -5,8 +5,8 @@
 #include <unistd.h>
 #include <time.h>
 
-#define FRAME_WIDTH 125
-#define FRAME_HEIGHT 45
+#define FRAME_WIDTH 124
+#define FRAME_HEIGHT 40
 
 #define START_PADDING_HORIZONTAL 30
 #define START_PADDING_VERTICAL 12
@@ -14,15 +14,16 @@
 #define DRAW_MODE_ERASE 0
 #define DRAW_MODE_FILL 1
 
-#define START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, stage_from, stage_to, wait) \
+#define START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, stage_from, stage_to, color, wait) \
+    wattron(start_screen, COLOR_PAIR(color)); \
     for (int i = num_from; i < num_to; i++) { \
         startScreenExplodeStage(start_screen, start_explosion_pos[i][0], start_explosion_pos[i][1], stage_from, stage_to); \
     } \
     usleep(wait);
-#define START_SCREEN_EXPLODE_LOOP(num_from, num_to) \
-    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, 0, 1, 30000); \
-    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, 1, 2, 30000); \
-    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, 2, 0, 0);
+#define START_SCREEN_EXPLODE_LOOP(num_from, num_to, color) \
+    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, 0, 1, color, 50000); \
+    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, 1, 2, color, 50000); \
+    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, 2, 0, color, 1000);
 
 void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], int mode) {
     srand(time(0));
@@ -39,11 +40,9 @@ void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], int mod
             case '#':
                 if (mode == 1) {
                     waddch(screen, ACS_CKBOARD);
+                    //waddch(screen, '#');
                 } else {
                     waddch(screen, ' ');
-                    //wdelch(screen);
-                    //getyx(screen, y, x);
-                    //wmove(screen, y, x + 1);
                 }
                 break;
             case '\n':
@@ -73,6 +72,18 @@ void startScreenExplodeStage(WINDOW *screen, int x, int y, int stage_from, int s
     }
 }
 
+void startScreenTextColor(WINDOW *screen, int color) {
+    wattron(screen, COLOR_PAIR(color));
+    for (int i = START_PADDING_VERTICAL; i < (16 + START_PADDING_VERTICAL); i++) {
+        for (int j = START_PADDING_HORIZONTAL; j < (63 + START_PADDING_HORIZONTAL); j++) {
+            if ((mvwinch(screen, i, j) & A_CHARTEXT) == (ACS_CKBOARD & A_CHARTEXT)) {
+                mvwaddch(screen, i, j, ACS_CKBOARD);
+                wrefresh(screen);
+            }
+        }
+    }
+}
+
 int main() {
     initscr();
     raw();
@@ -90,55 +101,45 @@ int main() {
     init_pair(8, COLOR_WHITE, COLOR_BLACK);
 
     WINDOW *start_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
-    wattron(start_screen, COLOR_PAIR(8));
+    wattron(start_screen, COLOR_PAIR(2));
     drawFromFile(start_screen, START_PADDING_HORIZONTAL, START_PADDING_VERTICAL, "graphics/missile-command-text", 1);
     wrefresh(start_screen);
-    wattroff(start_screen, COLOR_PAIR(8));
-    usleep(500000);
+    usleep(1000000);
 
     int start_explosion_pos[80][2];
     for (int i = 0; i < 80; i++) {
         if (i % 3 == 0) {
-            start_explosion_pos[i][0] = rand() % 119 + 1;
-            start_explosion_pos[i][1] = rand() % 39 + 1;
+            start_explosion_pos[i][0] = rand() % FRAME_WIDTH - 3;
+            start_explosion_pos[i][1] = rand() % FRAME_HEIGHT - 3;
         } else {
-            start_explosion_pos[i][0] = rand() % 60 + 28;
-            start_explosion_pos[i][1] = rand() % 16 + 10;
+            start_explosion_pos[i][0] = rand() % 63 + START_PADDING_HORIZONTAL - 2;
+            start_explosion_pos[i][1] = rand() % 16 + START_PADDING_VERTICAL - 2;
         }
     }
 
     for (int i = 0; i < 2; i++) {
-        wattron(start_screen, COLOR_PAIR(4));
-        START_SCREEN_EXPLODE_LOOP(0, 10);
-        wattron(start_screen, COLOR_PAIR(5));
-        START_SCREEN_EXPLODE_LOOP(10, 20);
-        wattron(start_screen, COLOR_PAIR(6));
-        START_SCREEN_EXPLODE_LOOP(20, 30);
-        wattron(start_screen, COLOR_PAIR(7));
-        START_SCREEN_EXPLODE_LOOP(30, 40);
-        wattron(start_screen, COLOR_PAIR(8));
-        START_SCREEN_EXPLODE_LOOP(40, 50);
-        wattron(start_screen, COLOR_PAIR(1));
-        START_SCREEN_EXPLODE_LOOP(50, 60);
-        wattron(start_screen, COLOR_PAIR(2));
-        START_SCREEN_EXPLODE_LOOP(60, 70);
-        wattron(start_screen, COLOR_PAIR(3));
-        START_SCREEN_EXPLODE_LOOP(70, 80);
+        START_SCREEN_EXPLODE_LOOP(0, 10, 4);
+        startScreenTextColor(start_screen, 3);
+        START_SCREEN_EXPLODE_LOOP(10, 20, 5);
+        startScreenTextColor(start_screen, 4);
+        START_SCREEN_EXPLODE_LOOP(20, 30, 6);
+        startScreenTextColor(start_screen, 5);
+        START_SCREEN_EXPLODE_LOOP(30, 40, 7);
+        startScreenTextColor(start_screen, 6);
+        START_SCREEN_EXPLODE_LOOP(40, 50, 8);
+        startScreenTextColor(start_screen, 7);
+        START_SCREEN_EXPLODE_LOOP(50, 60, 1);
+        startScreenTextColor(start_screen, 8);
+        START_SCREEN_EXPLODE_LOOP(60, 70, 2);
+        startScreenTextColor(start_screen, 1);
+        START_SCREEN_EXPLODE_LOOP(70, 80, 3);
+        startScreenTextColor(start_screen, 2);
     }
 
-/**
-    char temp[10];
-    char test = mvwinch(start_screen, 12, 30) & A_CHARTEXT;
-    mvwaddch(start_screen, 0, 0, test);
-    sprintf(temp, "%lu", ACS_CKBOARD);
-    wprintw(start_screen, temp);
-
-    if ((mvwinch(start_screen, 12, 30) & A_CHARTEXT) == ACS_CKBOARD) {
-        endwin();
-    }
-**/
+    usleep(1000000);
+    wattron(start_screen, COLOR_PAIR(4));
+    mvwprintw(start_screen, FRAME_HEIGHT - 1, FRAME_WIDTH / 2 - strlen("PRESS ANY KEY TO CONTINUE") / 2, "PRESS ANY KEY TO CONTINUE");
     wgetch(start_screen);
-    wattroff(start_screen, COLOR_PAIR(3));
 
     endwin();
 }
