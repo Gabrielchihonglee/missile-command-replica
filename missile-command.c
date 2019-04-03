@@ -33,6 +33,13 @@ struct missile {
     int vel_x, vel_y;
 };
 
+struct carouselThreadArg {
+    WINDOW *screen;
+    int live;
+    int start_x, end_x, y;
+    char *text;
+};
+
 void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], int mode) {
     FILE *fp = fopen(file, "r");
     char symbol;
@@ -138,6 +145,24 @@ void startScreenTextColor(WINDOW *screen, int color) {
     }
 }
 
+void *carouselFromString(void *arguments) {
+    struct carouselThreadArg *args = arguments;
+    //free(arguments);
+    usleep(1000000);
+    WINDOW *screen = args->screen;
+    //int y = args->y;
+    //int start_x = args->start_x;
+    //int end_x = args->end_x;
+    //char text = args->text[1];
+    wattron(screen, COLOR_PAIR(5));
+    //mvwaddch(screen, 0, 0, 'a');
+    mvwaddch(screen, 0, 0, 'X');
+    //while (args->live) {
+        // do something
+    //}
+    return NULL;
+}
+
 void *genHostileMissile(void *missiles) {
     struct missile *hostile_missiles = missiles;
     for (int i = 0; i < 10; i++) {
@@ -146,7 +171,7 @@ void *genHostileMissile(void *missiles) {
             .x = (rand() % (FRAME_WIDTH - 1)),
             .y = 0,
             .vel_x = (rand() % 3 - 1),
-            .vel_y = 1,
+            .vel_y = 1
         };
         if (hostile_missiles[i].x < FRAME_WIDTH / 2) {
             hostile_missiles[i].vel_x = (rand() % 2);
@@ -281,8 +306,22 @@ int main() {
         //drawFromFileExact(prep_screen, cities_x_pos[i] + 2, FRAME_HEIGHT - 7, "graphics/arrow-down-small", 1);
         mvwaddch(prep_screen, FRAME_HEIGHT - 7, cities_x_pos[i] + 3, 'V');
     }
-    wattron(prep_screen, COLOR_PAIR(14));
-    mvwprintw(prep_screen, FRAME_HEIGHT - 1, FRAME_WIDTH / 2 - strlen("Gabriel (Student ID: 37526367) @ 2019") / 2 - 2, "Gabriel (Student ID: 37526367) @ 2019");
+
+    struct carouselThreadArg *prep_screen_carousel_args = (struct carouselThreadArg *) malloc(sizeof(struct carouselThreadArg));
+    char *prep_screen_text = "GABRIEL (LANCASTER UNI ID: 37526367) @ 2019     INSERT COINS     1 COIN 1 PLAY";
+    struct carouselThreadArg temp_test = {
+        .screen = prep_screen,
+        .live = 1,
+        .start_x = 0,
+        .end_x = FRAME_WIDTH - 1,
+        .y = FRAME_HEIGHT - 1,
+        .text = prep_screen_text
+    };
+    prep_screen_carousel_args = &temp_test;
+    pthread_t prep_screen_carousel_thread;
+    pthread_create(&prep_screen_carousel_thread, NULL, carouselFromString, &prep_screen_carousel_args); // &prep_screen_carousel_args
+    //mvwprintw(prep_screen, FRAME_HEIGHT - 1, FRAME_WIDTH / 2 - strlen(prep_screen_text) / 2 - 2, prep_screen_text);
+
     wgetch(prep_screen);
     werase(prep_screen);
 
