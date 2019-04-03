@@ -24,8 +24,8 @@
     usleep(wait);
 
 #define START_SCREEN_EXPLODE_LOOP(num_from, num_to, color) \
-    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, "", stage_1, color, 50000); \
-    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, stage_1, stage_2, color, 50000); \
+    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, "", stage_1, color, 100000); \
+    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, stage_1, stage_2, color, 100000); \
     START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, stage_2, "", color, 1000);
 
 struct missile {
@@ -58,6 +58,28 @@ void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], int mod
                 break;
             default:
                 fprintf(stderr, "Unexpected character found in %s: '%c'", file, symbol);
+                break;
+        }
+        wrefresh(screen);
+        //nanosleep((const struct timespec[]){{0, 100000L}}, NULL);
+    }
+}
+
+void drawFromFileExact(WINDOW *screen, int start_x, int start_y, char file[], int mode) {
+    FILE *fp = fopen(file, "r");
+    char symbol;
+    int x, y;
+    wmove(screen, start_y, start_x);
+    while ((symbol = getc(fp)) != EOF) {
+        //waddch(screen, symbol);
+        switch (symbol) {
+            case '\n':
+                getyx(screen, y, x);
+                wmove(screen, y + 1, start_x);
+                break;
+            default:
+                waddch(screen, symbol);
+                break;
         }
         wrefresh(screen);
         //nanosleep((const struct timespec[]){{0, 100000L}}, NULL);
@@ -89,6 +111,7 @@ void drawFromString(WINDOW *screen, int start_x, int start_y, char *line, int mo
                 break;
             default:
                 fprintf(stderr, "Unexpected character found: '%i'", line[i]);
+                break;
         }
         wrefresh(screen);
     }
@@ -97,11 +120,9 @@ void drawFromString(WINDOW *screen, int start_x, int start_y, char *line, int mo
 void startScreenExplodeStage(WINDOW *screen, int x, int y, char *string_from, char *string_to) {
     if (strcmp(string_from, "") != 1) {
         drawFromString(screen, x, y, string_from, 0);
-        wrefresh(screen);
     }
     if (strcmp(string_to, "") != 1) {
         drawFromString(screen, x, y, string_to, 1);
-        wrefresh(screen);
     }
 }
 
@@ -158,8 +179,8 @@ void updateHostileMissile(WINDOW *screen, struct missile *missiles) {
 }
 
 int main() {
-    //srand(time(0));
-    srand(5837);
+    srand(time(0));
+    //srand(6837);
     initscr();
     raw();
     curs_set(0);
@@ -174,6 +195,8 @@ int main() {
     init_pair(6, COLOR_MAGENTA, COLOR_BLACK);
     init_pair(7, COLOR_CYAN, COLOR_BLACK);
     init_pair(8, COLOR_WHITE, COLOR_BLACK);
+
+    init_pair(14, COLOR_WHITE, COLOR_YELLOW);
 
     WINDOW *start_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(start_screen, A_BOLD);
@@ -236,6 +259,33 @@ int main() {
     wgetch(start_screen);
     werase(start_screen);
 
+    int cities_x_pos[6] = {15, 30, 45, 70, 85, 100};
+
+    WINDOW *prep_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
+    wattron(prep_screen, A_BOLD);
+    noecho();
+    wattron(prep_screen, COLOR_PAIR(4));
+    drawFromFile(prep_screen, 0, FRAME_HEIGHT - 6, "graphics/ground", 1);
+    for (int i = 0; i < 6; i++) {
+        wattron(prep_screen, COLOR_PAIR(3));
+        drawFromFile(prep_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
+        wattron(prep_screen, COLOR_PAIR(5));
+        drawFromFile(prep_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
+    }
+    wattron(prep_screen, COLOR_PAIR(5));
+    //mvwprintw(prep_screen, FRAME_HEIGHT - 6, FRAME_WIDTH / 4 - strlen("DEFEND") / 2, "DEFEND");
+    drawFromFile(prep_screen, 18, FRAME_HEIGHT - 15, "graphics/defend-text", 1);
+    drawFromFile(prep_screen, 72, FRAME_HEIGHT - 15, "graphics/cities-text", 1);
+    wattron(prep_screen, COLOR_PAIR(2));
+    for (int i = 0; i < 6; i++) {
+        //drawFromFileExact(prep_screen, cities_x_pos[i] + 2, FRAME_HEIGHT - 7, "graphics/arrow-down-small", 1);
+        mvwaddch(prep_screen, FRAME_HEIGHT - 7, cities_x_pos[i] + 3, 'V');
+    }
+    wattron(prep_screen, COLOR_PAIR(14));
+    mvwprintw(prep_screen, FRAME_HEIGHT - 1, FRAME_WIDTH / 2 - strlen("Gabriel (Student ID: 37526367) @ 2019") / 2 - 2, "Gabriel (Student ID: 37526367) @ 2019");
+    wgetch(prep_screen);
+    werase(prep_screen);
+
     WINDOW *main_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(main_screen, A_BOLD);
     keypad(main_screen, TRUE);
@@ -246,7 +296,6 @@ int main() {
     wattron(main_screen, COLOR_PAIR(4));
     drawFromFile(main_screen, 0, FRAME_HEIGHT - 6, "graphics/ground", 1);
 
-    int cities_x_pos[6] = {15, 30, 45, 70, 85, 100};
     for (int i = 0; i < 6; i++) {
         wattron(main_screen, COLOR_PAIR(3));
         drawFromFile(main_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
