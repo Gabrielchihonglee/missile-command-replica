@@ -16,17 +16,17 @@
 #define SCORE_FIGHTER 50
 #define SCORE_UFO 60
 **/
-#define START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, stage_from, stage_to, color, wait) \
+#define START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, string_from, string_to, color, wait) \
     wattron(start_screen, COLOR_PAIR(color)); \
     for (int i = num_from; i < num_to; i++) { \
-        startScreenExplodeStage(start_screen, start_explosion_pos[i][0], start_explosion_pos[i][1], stage_from, stage_to); \
+        startScreenExplodeStage(start_screen, start_explosion_pos[i][0], start_explosion_pos[i][1], string_from, string_to); \
     } \
     usleep(wait);
 
 #define START_SCREEN_EXPLODE_LOOP(num_from, num_to, color) \
-    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, 0, 1, color, 50000); \
-    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, 1, 2, color, 50000); \
-    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, 2, 0, color, 1000);
+    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, "", stage_1, color, 50000); \
+    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, stage_1, stage_2, color, 50000); \
+    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, stage_2, "", color, 1000);
 
 struct missile {
     int x, y;
@@ -64,17 +64,43 @@ void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], int mod
     }
 }
 
-void startScreenExplodeStage(WINDOW *screen, int x, int y, int stage_from, int stage_to) {
-    if (stage_from != 0) {
-        char file_name_from[33];
-        sprintf(file_name_from, "graphics/explosion-small-stage-%i", stage_from);
-        drawFromFile(screen, x, y, file_name_from, 0);
+void drawFromString(WINDOW *screen, int start_x, int start_y, char *line, int mode) {
+    int length = strlen(line);
+    int x, y;
+    wmove(screen, start_y, start_x);
+    for (int i = 0; i < length; i++) {
+        switch (line[i]) {
+            case '.':
+                getyx(screen, y, x);
+                wmove(screen, y, x + 1);
+                break;
+            case '#':
+                if (mode == 1) {
+                    waddch(screen, ACS_CKBOARD);
+                } else {
+                    waddch(screen, ' ');
+                }
+                break;
+            case '\n':
+                getyx(screen, y, x);
+                wmove(screen, y + 1, start_x);
+                break;
+            case '\0':
+                break;
+            default:
+                fprintf(stderr, "Unexpected character found: '%i'", line[i]);
+        }
         wrefresh(screen);
     }
-    if (stage_to != 0) {
-        char file_name_to[33];
-        sprintf(file_name_to, "graphics/explosion-small-stage-%i", stage_to);
-        drawFromFile(screen, x, y, file_name_to, 1);
+}
+
+void startScreenExplodeStage(WINDOW *screen, int x, int y, char *string_from, char *string_to) {
+    if (strcmp(string_from, "") != 1) {
+        drawFromString(screen, x, y, string_from, 0);
+        wrefresh(screen);
+    }
+    if (strcmp(string_to, "") != 1) {
+        drawFromString(screen, x, y, string_to, 1);
         wrefresh(screen);
     }
 }
@@ -132,7 +158,8 @@ void updateHostileMissile(WINDOW *screen, struct missile *missiles) {
 }
 
 int main() {
-    srand(time(0));
+    //srand(time(0));
+    srand(5837);
     initscr();
     raw();
     curs_set(0);
@@ -165,6 +192,24 @@ int main() {
             start_explosion_pos[i][1] = rand() % 16 + START_PADDING_VERTICAL - 2;
         }
     }
+
+    FILE *explosion_small_stage_1 = fopen("graphics/explosion-small-stage-1", "r");
+    fseek (explosion_small_stage_1, 0, SEEK_END);
+    int stage_1_length = ftell(explosion_small_stage_1);
+    fseek (explosion_small_stage_1, 0, SEEK_SET);
+    char *stage_1 = malloc(stage_1_length + 1);
+    fread(stage_1, 1, stage_1_length, explosion_small_stage_1);
+    stage_1[stage_1_length] = '\0';
+    fclose(explosion_small_stage_1);
+
+    FILE *explosion_small_stage_2 = fopen("graphics/explosion-small-stage-2", "r");
+    fseek (explosion_small_stage_2, 0, SEEK_END);
+    int stage_2_length = ftell(explosion_small_stage_2);
+    fseek (explosion_small_stage_2, 0, SEEK_SET);
+    char *stage_2 = malloc(stage_2_length + 1);
+    fread(stage_2, 2, stage_2_length, explosion_small_stage_2);
+    stage_2[stage_2_length] = '\0';
+    fclose(explosion_small_stage_2);
 
     for (int i = 0; i < 2; i++) {
         START_SCREEN_EXPLODE_LOOP(0, 10, 4);
@@ -223,9 +268,6 @@ int main() {
 
     while (1) {
         updateHostileMissile(main_screen, hostile_missiles);
-        //if ((rand() % 1000) == 0) {
-        //    mvwaddch(main_screen, 0, 0, rand());
-        //}
         input = wgetch(main_screen);
         switch(input) {
             case KEY_LEFT:
