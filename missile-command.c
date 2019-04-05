@@ -38,9 +38,10 @@ struct carouselThreadArg {
     int live;
     int start_x, end_x, y;
     char *text;
+    int color_pair;
 };
 
-void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], int mode) {
+void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], int mode) { // mode 1: draw 0: erase/draw with backgound
     FILE *fp = fopen(file, "r");
     char symbol;
     int x, y;
@@ -150,16 +151,32 @@ void *carouselFromString(void *arguments) {
     //free(arguments);
     usleep(1000000);
     WINDOW *screen = args->screen;
-    //int y = args->y;
-    //int start_x = args->start_x;
-    //int end_x = args->end_x;
-    //char text = args->text[1];
-    wattron(screen, COLOR_PAIR(5));
-    //mvwaddch(screen, 0, 0, 'a');
-    mvwaddch(screen, 0, 0, 'X');
-    //while (args->live) {
-        // do something
-    //}
+    int y = args->y;
+    int start_x = args->start_x;
+    int end_x = args->end_x;
+    char *text = args->text;
+    int color_pair = args -> color_pair;
+    wattron(screen, COLOR_PAIR(color_pair));
+    wrefresh(screen);
+    int head_x = start_x;
+    while (args->live == 1) {
+        for (int i = 0; i < (FRAME_WIDTH - 1 - head_x) && i < strlen(text); i++) {
+            if ((head_x + i) < end_x) {
+                continue;
+            }
+            mvwaddch(screen, y, head_x + i, text[i]);
+        }
+        if ((head_x + strlen(text)) < (FRAME_WIDTH - 1)) {
+            mvwaddch(screen, y, head_x + strlen(text), ' ');
+        }
+        wrefresh(screen);
+        usleep(160000);
+        head_x--;
+        if (head_x + strlen(text) + 1 <= end_x) {
+            head_x = start_x;
+        }
+    }
+    wrefresh(screen);
     return NULL;
 }
 
@@ -221,7 +238,7 @@ int main() {
     init_pair(7, COLOR_CYAN, COLOR_BLACK);
     init_pair(8, COLOR_WHITE, COLOR_BLACK);
 
-    init_pair(14, COLOR_WHITE, COLOR_YELLOW);
+    init_pair(84, COLOR_WHITE, COLOR_YELLOW);
 
     WINDOW *start_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(start_screen, A_BOLD);
@@ -279,7 +296,7 @@ int main() {
     }
 
     usleep(1000000);
-    wattron(start_screen, COLOR_PAIR(4));
+    wattron(start_screen, COLOR_PAIR(84));
     mvwprintw(start_screen, FRAME_HEIGHT - 1, FRAME_WIDTH / 2 - strlen("PRESS ANY KEY TO CONTINUE") / 2, "PRESS ANY KEY TO CONTINUE");
     wgetch(start_screen);
     werase(start_screen);
@@ -289,8 +306,8 @@ int main() {
     WINDOW *prep_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(prep_screen, A_BOLD);
     noecho();
-    wattron(prep_screen, COLOR_PAIR(4));
-    drawFromFile(prep_screen, 0, FRAME_HEIGHT - 6, "graphics/ground", 1);
+    wattron(prep_screen, COLOR_PAIR(84));
+    drawFromFile(prep_screen, 0, FRAME_HEIGHT - 6, "graphics/ground", 0);
     for (int i = 0; i < 6; i++) {
         wattron(prep_screen, COLOR_PAIR(3));
         drawFromFile(prep_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
@@ -298,31 +315,43 @@ int main() {
         drawFromFile(prep_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
     }
     wattron(prep_screen, COLOR_PAIR(5));
-    //mvwprintw(prep_screen, FRAME_HEIGHT - 6, FRAME_WIDTH / 4 - strlen("DEFEND") / 2, "DEFEND");
     drawFromFile(prep_screen, 18, FRAME_HEIGHT - 15, "graphics/defend-text", 1);
     drawFromFile(prep_screen, 72, FRAME_HEIGHT - 15, "graphics/cities-text", 1);
     wattron(prep_screen, COLOR_PAIR(2));
     for (int i = 0; i < 6; i++) {
-        //drawFromFileExact(prep_screen, cities_x_pos[i] + 2, FRAME_HEIGHT - 7, "graphics/arrow-down-small", 1);
         mvwaddch(prep_screen, FRAME_HEIGHT - 7, cities_x_pos[i] + 3, 'V');
     }
+    char *prep_screen_text = "GABRIEL (LANC UNI ID: 37526367) @ 2019     INSERT COINS     1 COIN 1 PLAY";
 
-    struct carouselThreadArg *prep_screen_carousel_args = (struct carouselThreadArg *) malloc(sizeof(struct carouselThreadArg));
-    char *prep_screen_text = "GABRIEL (LANCASTER UNI ID: 37526367) @ 2019     INSERT COINS     1 COIN 1 PLAY";
-    struct carouselThreadArg temp_test = {
+    // following code kept for 'historic' reasons :P
+    // struct carouselThreadArg *prep_screen_carousel_args;
+    // prep_screen_carousel_args = malloc(sizeof(struct carouselThreadArg));
+    // struct carouselThreadArg temp_test = {
+    //     .screen = prep_screen,
+    //     .live = 1,
+    //     .start_x = 0,
+    //     .end_x = FRAME_WIDTH - 1,
+    //     .y = FRAME_HEIGHT - 1,
+    //     .text = prep_screen_text
+    // };
+    // prep_screen_carousel_args = temp_test;
+    // pthread_t prep_screen_carousel_thread;
+    // pthread_create(&prep_screen_carousel_thread, NULL, carouselFromString, prep_screen_carousel_args);
+
+    struct carouselThreadArg *prep_screen_carousel_args = malloc(sizeof(*prep_screen_carousel_args));
+    *prep_screen_carousel_args = (struct carouselThreadArg){
         .screen = prep_screen,
         .live = 1,
-        .start_x = 0,
-        .end_x = FRAME_WIDTH - 1,
+        .start_x = FRAME_WIDTH - 1,
+        .end_x = 0,
         .y = FRAME_HEIGHT - 1,
-        .text = prep_screen_text
+        .text = prep_screen_text,
+        .color_pair = 84,
     };
-    prep_screen_carousel_args = &temp_test;
     pthread_t prep_screen_carousel_thread;
-    pthread_create(&prep_screen_carousel_thread, NULL, carouselFromString, &prep_screen_carousel_args); // &prep_screen_carousel_args
-    //mvwprintw(prep_screen, FRAME_HEIGHT - 1, FRAME_WIDTH / 2 - strlen(prep_screen_text) / 2 - 2, prep_screen_text);
-
+    pthread_create(&prep_screen_carousel_thread, NULL, carouselFromString, prep_screen_carousel_args);
     wgetch(prep_screen);
+    prep_screen_carousel_args->live = 0;
     werase(prep_screen);
 
     WINDOW *main_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
@@ -332,8 +361,8 @@ int main() {
     nodelay(main_screen, TRUE);
     wmove(main_screen, 0, 0);
 
-    wattron(main_screen, COLOR_PAIR(4));
-    drawFromFile(main_screen, 0, FRAME_HEIGHT - 6, "graphics/ground", 1);
+    wattron(main_screen, COLOR_PAIR(84));
+    drawFromFile(main_screen, 0, FRAME_HEIGHT - 6, "graphics/ground", 0);
 
     for (int i = 0; i < 6; i++) {
         wattron(main_screen, COLOR_PAIR(3));
