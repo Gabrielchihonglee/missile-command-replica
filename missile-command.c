@@ -28,9 +28,13 @@
     START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, stage_1, stage_2, color, 100000); \
     START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, stage_2, "", color, 1000);
 
-struct missile {
+struct flashThreadArg {
+    WINDOW *screen;
+    int live;
     int x, y;
-    int vel_x, vel_y;
+    char *text;
+    int duration;
+    int color_pair;
 };
 
 struct carouselThreadArg {
@@ -39,6 +43,11 @@ struct carouselThreadArg {
     int start_x, end_x, y;
     char *text;
     int color_pair;
+};
+
+struct missile {
+    int x, y;
+    int vel_x, vel_y;
 };
 
 void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], int mode) { // mode 1: draw 0: erase/draw with backgound
@@ -146,17 +155,40 @@ void startScreenTextColor(WINDOW *screen, int color) {
     }
 }
 
+void *flashFromString(void *arguments) {
+    struct flashThreadArg *args = arguments;
+    WINDOW *screen = args->screen;
+    int x = args->x;
+    int y = args->y;
+    char *text = args->text;
+    int duration = args->duration;
+    int color_pair = args->color_pair;
+    while (args->live == 1) {
+        wattron(screen, COLOR_PAIR(color_pair));
+        mvwprintw(screen, y, x, text);
+        wrefresh(screen);
+        usleep(duration / 2);
+        wattron(screen, COLOR_PAIR(color_pair));
+        for (int i = 0; i < strlen(text) - 1; i++) {
+            mvwprintw(screen, y, x + i, " ");
+            wrefresh(screen);
+        }
+        usleep(duration / 2);
+    }
+    free(arguments);
+    return NULL;
+}
+
 void *carouselFromString(void *arguments) {
     struct carouselThreadArg *args = arguments;
     //free(arguments);
-    usleep(1000000);
+    //usleep(1000000);
     WINDOW *screen = args->screen;
     int y = args->y;
     int start_x = args->start_x;
     int end_x = args->end_x;
     char *text = args->text;
     int color_pair = args -> color_pair;
-    wattron(screen, COLOR_PAIR(color_pair));
     wrefresh(screen);
     int head_x = start_x;
     while (args->live == 1) {
@@ -164,9 +196,11 @@ void *carouselFromString(void *arguments) {
             if ((head_x + i) < end_x) {
                 continue;
             }
+            wattron(screen, COLOR_PAIR(color_pair));
             mvwaddch(screen, y, head_x + i, text[i]);
         }
         if ((head_x + strlen(text)) < (FRAME_WIDTH - 1)) {
+            wattron(screen, COLOR_PAIR(color_pair));
             mvwaddch(screen, y, head_x + strlen(text), ' ');
         }
         wrefresh(screen);
@@ -176,7 +210,7 @@ void *carouselFromString(void *arguments) {
             head_x = start_x;
         }
     }
-    wrefresh(screen);
+    free(arguments);
     return NULL;
 }
 
@@ -300,14 +334,14 @@ int main() {
     mvwprintw(start_screen, FRAME_HEIGHT - 1, FRAME_WIDTH / 2 - strlen("PRESS ANY KEY TO CONTINUE") / 2, "PRESS ANY KEY TO CONTINUE");
     wgetch(start_screen);
     werase(start_screen);
-
-    int cities_x_pos[6] = {15, 30, 45, 70, 85, 100};
+    delwin(start_screen);
 
     WINDOW *prep_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(prep_screen, A_BOLD);
     noecho();
     wattron(prep_screen, COLOR_PAIR(84));
     drawFromFile(prep_screen, 0, FRAME_HEIGHT - 6, "graphics/ground", 0);
+    int cities_x_pos[6] = {15, 30, 45, 70, 85, 100};
     for (int i = 0; i < 6; i++) {
         wattron(prep_screen, COLOR_PAIR(3));
         drawFromFile(prep_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
@@ -318,10 +352,29 @@ int main() {
     drawFromFile(prep_screen, 18, FRAME_HEIGHT - 15, "graphics/defend-text", 1);
     drawFromFile(prep_screen, 72, FRAME_HEIGHT - 15, "graphics/cities-text", 1);
     wattron(prep_screen, COLOR_PAIR(2));
-    for (int i = 0; i < 6; i++) {
-        mvwaddch(prep_screen, FRAME_HEIGHT - 7, cities_x_pos[i] + 3, 'V');
+    char prep_screen_arrow_string[FRAME_WIDTH - 1];
+    for (int i = 0; i < FRAME_WIDTH - 1; i++) {
+        prep_screen_arrow_string[i] = ' ';
     }
-    char *prep_screen_text = "GABRIEL (LANC UNI ID: 37526367) @ 2019     INSERT COINS     1 COIN 1 PLAY";
+    for (int i = 0; i < 6; i++) {
+        prep_screen_arrow_string[cities_x_pos[i] + 3] = 'V';
+    }
+    prep_screen_arrow_string[FRAME_WIDTH - 1] = '\0';
+    //mvwprintw(prep_screen, 0, 0, prep_screen_arrow_string);
+    //wrefresh(prep_screen);
+    //usleep(1000000);
+    struct flashThreadArg *prep_screen_arrow_args = malloc(sizeof(*prep_screen_arrow_args));
+    *prep_screen_arrow_args = (struct flashThreadArg) {
+        .screen = prep_screen,
+        .live = 1,
+        .x = 0,
+        .y = FRAME_HEIGHT - 7,
+        .text = prep_screen_arrow_string,
+        .duration = 1200000,
+        .color_pair = 2,
+    };
+    pthread_t prep_screen_arrow_thread;
+    pthread_create(&prep_screen_arrow_thread, NULL, flashFromString, prep_screen_arrow_args);
 
     // following code kept for 'historic' reasons :P
     // struct carouselThreadArg *prep_screen_carousel_args;
@@ -337,7 +390,8 @@ int main() {
     // prep_screen_carousel_args = temp_test;
     // pthread_t prep_screen_carousel_thread;
     // pthread_create(&prep_screen_carousel_thread, NULL, carouselFromString, prep_screen_carousel_args);
-
+    usleep(100000);
+    char *prep_screen_text = "GABRIEL (LANC UNI ID: 37526367) @ 2019     INSERT COINS     1 COIN 1 PLAY";
     struct carouselThreadArg *prep_screen_carousel_args = malloc(sizeof(*prep_screen_carousel_args));
     *prep_screen_carousel_args = (struct carouselThreadArg){
         .screen = prep_screen,
@@ -351,8 +405,12 @@ int main() {
     pthread_t prep_screen_carousel_thread;
     pthread_create(&prep_screen_carousel_thread, NULL, carouselFromString, prep_screen_carousel_args);
     wgetch(prep_screen);
+    prep_screen_arrow_args->live = 0;
     prep_screen_carousel_args->live = 0;
     werase(prep_screen);
+    delwin(prep_screen);
+
+    usleep(100000);
 
     WINDOW *main_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(main_screen, A_BOLD);
