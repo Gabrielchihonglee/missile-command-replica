@@ -4,7 +4,7 @@ HEADER	=
 OUT	= missile-command
 CC	= gcc
 FLAGS	= -g -c -Wall
-LFLAGS	= -lncurses -lpthread
+LFLAGS	= -lncurses -lpthread -lm
 
 all: $(OBJS)
 	$(CC) -g $(OBJS) -o $(OUT) $(LFLAGS)
