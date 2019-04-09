@@ -69,6 +69,16 @@ struct hostileMissilesThreadArg {
     struct missile *player_missiles;
 };
 
+struct city {
+    int x, y;
+    int survive;
+};
+
+struct base {
+    int x, y;
+    int num_of_missiles;
+};
+
 pthread_mutex_t lock;
 
 void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], int mode) { // mode 1: draw 0: erase/draw with backgound
@@ -157,15 +167,20 @@ void drawFromString(WINDOW *screen, int start_x, int start_y, char *line, int mo
 
 void startScreenExplodeStage(WINDOW *screen, int x, int y, char *string_from, char *string_to) {
     if (strcmp(string_from, "") != 1) {
+        pthread_mutex_lock(&lock);
         drawFromString(screen, x, y, string_from, 0);
+        pthread_mutex_unlock(&lock);
     }
     if (strcmp(string_to, "") != 1) {
+        pthread_mutex_lock(&lock);
         drawFromString(screen, x, y, string_to, 1);
+        pthread_mutex_unlock(&lock);
     }
 }
 
 void startScreenTextColor(WINDOW *screen, int color) {
     wattron(screen, COLOR_PAIR(color));
+    pthread_mutex_lock(&lock);
     for (int i = START_PADDING_VERTICAL; i < (16 + START_PADDING_VERTICAL); i++) {
         for (int j = START_PADDING_HORIZONTAL; j < (63 + START_PADDING_HORIZONTAL); j++) {
             if ((mvwinch(screen, i, j) & A_CHARTEXT) == (ACS_CKBOARD & A_CHARTEXT)) {
@@ -174,6 +189,7 @@ void startScreenTextColor(WINDOW *screen, int color) {
             }
         }
     }
+    pthread_mutex_unlock(&lock);
 }
 
 void refreshHighScore(WINDOW *screen, int cur_score, int high_score) {
@@ -288,15 +304,19 @@ void *flashFromString(void *arguments) {
     int duration = args->duration;
     int color_pair = args->color_pair;
     while (args->live) {
+        pthread_mutex_lock(&lock);
         wattron(screen, COLOR_PAIR(color_pair));
         mvwprintw(screen, y, x, text);
         wrefresh(screen);
+        pthread_mutex_unlock(&lock);
         usleep(duration / 2);
+        pthread_mutex_lock(&lock);
         wattron(screen, COLOR_PAIR(color_pair));
         for (int i = 0; i < strlen(text) - 1; i++) {
             mvwprintw(screen, y, x + i, " ");
             wrefresh(screen);
         }
+        pthread_mutex_unlock(&lock);
         usleep(duration / 2);
     }
     free(arguments);
@@ -316,6 +336,7 @@ void *carouselFromString(void *arguments) {
     wrefresh(screen);
     int head_x = start_x;
     while (args->live) {
+        pthread_mutex_lock(&lock);
         for (int i = 0; i < (FRAME_WIDTH - 1 - head_x) && i < strlen(text); i++) {
             if ((head_x + i) < end_x) {
                 continue;
@@ -327,6 +348,7 @@ void *carouselFromString(void *arguments) {
             wattron(screen, COLOR_PAIR(color_pair));
             mvwaddch(screen, y, head_x + strlen(text), ' ');
         }
+        pthread_mutex_unlock(&lock);
         wrefresh(screen);
         usleep(160000);
         head_x--;
@@ -545,7 +567,7 @@ int main() {
     werase(prep_screen);
     delwin(prep_screen);
 
-    usleep(100000);
+    //usleep(1000000);
 
     WINDOW *main_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(main_screen, A_BOLD);
