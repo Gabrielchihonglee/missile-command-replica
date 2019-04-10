@@ -12,22 +12,6 @@
 
 #define START_PADDING_HORIZONTAL 30
 #define START_PADDING_VERTICAL 12
-/**
-#define SCORE_MISSILE 25
-#define SCORE_FIGHTER 50
-#define SCORE_UFO 60
-**/
-#define START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, string_from, string_to, color, wait) \
-    wattron(start_screen, COLOR_PAIR(color)); \
-    for (int i = num_from; i < num_to; i++) { \
-        startScreenExplodeStage(start_screen, start_explosion_pos[i][0], start_explosion_pos[i][1], string_from, string_to); \
-    } \
-    usleep(wait);
-
-#define START_SCREEN_EXPLODE_LOOP(num_from, num_to, color) \
-    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, "", stage_1, color, 100000); \
-    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, stage_1, stage_2, color, 100000); \
-    START_SCREEN_EXPLODE_INNER_LOOP(num_from, num_to, stage_2, "", color, 1000);
 
 struct flashThreadArg {
     WINDOW *screen;
@@ -80,6 +64,9 @@ struct base {
 };
 
 pthread_mutex_t lock;
+
+static int start_explosion_pos[80][2];
+static char *STAGE_1, *STAGE_2;
 
 void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], int mode) { // mode 1: draw 0: erase/draw with backgound
     FILE *fp = fopen(file, "r");
@@ -165,17 +152,28 @@ void drawFromString(WINDOW *screen, int start_x, int start_y, char *line, int mo
     }
 }
 
-void startScreenExplodeStage(WINDOW *screen, int x, int y, char *string_from, char *string_to) {
-    if (strcmp(string_from, "") != 1) {
-        pthread_mutex_lock(&lock);
-        drawFromString(screen, x, y, string_from, 0);
-        pthread_mutex_unlock(&lock);
+void updateSmallExplosionStage(WINDOW *screen, int from_missile, int to_missile, int color) {
+    pthread_mutex_lock(&lock);
+    wattron(screen, COLOR_PAIR(color));
+    for (int i = from_missile; i < to_missile; i++) {
+        drawFromString(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_1, 1); // draw stage 1
     }
-    if (strcmp(string_to, "") != 1) {
-        pthread_mutex_lock(&lock);
-        drawFromString(screen, x, y, string_to, 1);
-        pthread_mutex_unlock(&lock);
+    pthread_mutex_unlock(&lock);
+    usleep(100000);
+    pthread_mutex_lock(&lock);
+    wattron(screen, COLOR_PAIR(color));
+    for (int i = from_missile; i < to_missile; i++) {
+        drawFromString(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_2, 1); // draw stage 2
     }
+    pthread_mutex_unlock(&lock);
+    usleep(100000);
+    pthread_mutex_lock(&lock);
+    wattron(screen, COLOR_PAIR(color));
+    for (int i = from_missile; i < to_missile; i++) {
+        drawFromString(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_2, 0); // erase stage 2
+    }
+    pthread_mutex_unlock(&lock);
+    usleep(1000);
 }
 
 void startScreenTextColor(WINDOW *screen, int color) {
@@ -432,7 +430,6 @@ int main() {
     wrefresh(start_screen);
     usleep(1000000);
 
-    int start_explosion_pos[80][2];
     for (int i = 0; i < 80; i++) {
         if (i % 3 == 0) {
             start_explosion_pos[i][0] = rand() % FRAME_WIDTH - 3;
@@ -446,37 +443,37 @@ int main() {
     FILE *explosion_small_stage_1 = fopen("graphics/explosion-small-stage-1", "r");
     fseek (explosion_small_stage_1, 0, SEEK_END);
     int stage_1_length = ftell(explosion_small_stage_1);
+    STAGE_1 = malloc(sizeof(char) * stage_1_length + 1);
     fseek (explosion_small_stage_1, 0, SEEK_SET);
-    char *stage_1 = malloc(stage_1_length + 1);
-    fread(stage_1, 1, stage_1_length, explosion_small_stage_1);
-    stage_1[stage_1_length] = '\0';
+    fread(STAGE_1, 1, stage_1_length, explosion_small_stage_1);
+    STAGE_1[stage_1_length] = '\0';
     fclose(explosion_small_stage_1);
 
     FILE *explosion_small_stage_2 = fopen("graphics/explosion-small-stage-2", "r");
     fseek (explosion_small_stage_2, 0, SEEK_END);
     int stage_2_length = ftell(explosion_small_stage_2);
+    STAGE_2 = malloc(sizeof(char) * stage_2_length + 1);
     fseek (explosion_small_stage_2, 0, SEEK_SET);
-    char *stage_2 = malloc(stage_2_length + 1);
-    fread(stage_2, 2, stage_2_length, explosion_small_stage_2);
-    stage_2[stage_2_length] = '\0';
+    fread(STAGE_2, 2, stage_2_length, explosion_small_stage_2);
+    STAGE_2[stage_2_length] = '\0';
     fclose(explosion_small_stage_2);
 
     for (int i = 0; i < 2; i++) {
-        START_SCREEN_EXPLODE_LOOP(0, 10, 4);
+        updateSmallExplosionStage(start_screen, 0, 10, 4);
         startScreenTextColor(start_screen, 3);
-        START_SCREEN_EXPLODE_LOOP(10, 20, 5);
+        updateSmallExplosionStage(start_screen, 10, 20, 5);
         startScreenTextColor(start_screen, 4);
-        START_SCREEN_EXPLODE_LOOP(20, 30, 6);
+        updateSmallExplosionStage(start_screen, 20, 30, 6);
         startScreenTextColor(start_screen, 5);
-        START_SCREEN_EXPLODE_LOOP(30, 40, 7);
+        updateSmallExplosionStage(start_screen, 30, 40, 7);
         startScreenTextColor(start_screen, 6);
-        START_SCREEN_EXPLODE_LOOP(40, 50, 8);
+        updateSmallExplosionStage(start_screen, 40, 50, 8);
         startScreenTextColor(start_screen, 7);
-        START_SCREEN_EXPLODE_LOOP(50, 60, 1);
+        updateSmallExplosionStage(start_screen, 50, 60, 1);
         startScreenTextColor(start_screen, 8);
-        START_SCREEN_EXPLODE_LOOP(60, 70, 2);
+        updateSmallExplosionStage(start_screen, 60, 70, 2);
         startScreenTextColor(start_screen, 1);
-        START_SCREEN_EXPLODE_LOOP(70, 80, 3);
+        updateSmallExplosionStage(start_screen, 70, 80, 3);
         startScreenTextColor(start_screen, 2);
     }
 
