@@ -73,6 +73,19 @@ static enum drawMode {ERASE, DRAW};
 static struct carouselThreadArg *prep_screen_carousel_args;
 static struct flashThreadArg *prep_screen_arrow_args;
 
+static WINDOW *flash_thread_screen;
+static int flash_thread_live;
+static int flash_thread_x, flash_thread_y;
+static char *flash_thread_text;
+static int flash_thread_duration;
+static int flash_thread_color_pair;
+
+static WINDOW *carousel_thread_screen;
+static int carousel_thread_live;
+static int carousel_thread_start_x, carousel_thread_end_x, carousel_thread_y;
+static char *carousel_thread_text;
+static int carousel_thread_color_pair;
+
 void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], enum drawMode mode) { // mode 1: draw 0: erase/draw with backgound
     FILE *fp = fopen(file, "r");
     char symbol;
@@ -270,63 +283,49 @@ void checkHitPlayer(WINDOW *screen, float x, float y) {
 }
 
 void *flashFromString(void *arguments) {
-    WINDOW *screen = prep_screen_arrow_args->screen;
-    int x = prep_screen_arrow_args->x;
-    int y = prep_screen_arrow_args->y;
-    char *text = prep_screen_arrow_args->text;
-    int duration = prep_screen_arrow_args->duration;
-    int color_pair = prep_screen_arrow_args->color_pair;
-    while (prep_screen_arrow_args->live) {
+    while (flash_thread_live) {
         pthread_mutex_lock(&lock);
-        wattron(screen, COLOR_PAIR(color_pair));
-        mvwprintw(screen, y, x, text);
-        wrefresh(screen);
+        wattron(flash_thread_screen, COLOR_PAIR(flash_thread_color_pair));
+        mvwprintw(flash_thread_screen, flash_thread_y, flash_thread_x, flash_thread_text);
+        wrefresh(flash_thread_screen);
         pthread_mutex_unlock(&lock);
-        usleep(duration / 2);
+        usleep(flash_thread_duration / 2);
         pthread_mutex_lock(&lock);
-        wattron(screen, COLOR_PAIR(color_pair));
-        for (int i = 0; i < strlen(text) - 1; i++) {
-            mvwprintw(screen, y, x + i, " ");
-            wrefresh(screen);
+        wattron(flash_thread_screen, COLOR_PAIR(flash_thread_color_pair));
+        for (int i = 0; i < strlen(flash_thread_text) - 1; i++) {
+            mvwprintw(flash_thread_screen, flash_thread_y, flash_thread_x + i, " ");
+            wrefresh(flash_thread_screen);
         }
         pthread_mutex_unlock(&lock);
-        usleep(duration / 2);
+        usleep(flash_thread_duration / 2);
     }
-    free(prep_screen_arrow_args);
     return NULL;
 }
 
 void *carouselFromString(void *argument) {
-    WINDOW *screen = prep_screen_carousel_args->screen;
-    int y = prep_screen_carousel_args->y;
-    int start_x = prep_screen_carousel_args->start_x;
-    int end_x = prep_screen_carousel_args->end_x;
-    char *text = prep_screen_carousel_args->text;
-    int color_pair = prep_screen_carousel_args->color_pair;
-    wrefresh(screen);
-    int head_x = start_x;
-    while (prep_screen_carousel_args->live) {
+    wrefresh(carousel_thread_screen);
+    int carousel_thread_head_x = carousel_thread_start_x;
+    while (carousel_thread_live) {
         pthread_mutex_lock(&lock);
-        for (int i = 0; i < (FRAME_WIDTH - 1 - head_x) && i < strlen(text); i++) {
-            if ((head_x + i) < end_x) {
+        for (int i = 0; i < (FRAME_WIDTH - 1 - carousel_thread_head_x) && i < strlen(carousel_thread_text); i++) {
+            if ((carousel_thread_head_x + i) < carousel_thread_end_x) {
                 continue;
             }
-            wattron(screen, COLOR_PAIR(color_pair));
-            mvwaddch(screen, y, head_x + i, text[i]);
+            wattron(carousel_thread_screen, COLOR_PAIR(carousel_thread_color_pair));
+            mvwaddch(carousel_thread_screen, carousel_thread_y, carousel_thread_head_x + i, carousel_thread_text[i]);
         }
-        if ((head_x + strlen(text)) < (FRAME_WIDTH - 1)) {
-            wattron(screen, COLOR_PAIR(color_pair));
-            mvwaddch(screen, y, head_x + strlen(text), ' ');
+        if ((carousel_thread_head_x + strlen(carousel_thread_text)) < (FRAME_WIDTH - 1)) {
+            wattron(carousel_thread_screen, COLOR_PAIR(carousel_thread_color_pair));
+            mvwaddch(carousel_thread_screen, carousel_thread_y, carousel_thread_head_x + strlen(carousel_thread_text), ' ');
         }
         pthread_mutex_unlock(&lock);
-        wrefresh(screen);
+        wrefresh(carousel_thread_screen);
         usleep(160000);
-        head_x--;
-        if (head_x + strlen(text) + 1 <= end_x) {
-            head_x = start_x;
+        carousel_thread_head_x--;
+        if (carousel_thread_head_x + strlen(carousel_thread_text) + 1 <= carousel_thread_end_x) {
+            carousel_thread_head_x = carousel_thread_start_x;
         }
     }
-    free(prep_screen_carousel_args);
     return NULL;
 }
 
@@ -482,37 +481,31 @@ int main() {
         prep_screen_arrow_string[cities_x_pos[i] + 3] = 'V';
     }
     prep_screen_arrow_string[FRAME_WIDTH - 1] = '\0';
-    prep_screen_arrow_args = malloc(sizeof(*prep_screen_arrow_args));
-    *prep_screen_arrow_args = (struct flashThreadArg) {
-        .screen = prep_screen,
-        .live = 1,
-        .x = 0,
-        .y = FRAME_HEIGHT - 7,
-        .text = prep_screen_arrow_string,
-        .duration = 1200000,
-        .color_pair = 2,
-    };
+    flash_thread_screen = prep_screen;
+    flash_thread_live = 1;
+    flash_thread_x = 0;
+    flash_thread_y = FRAME_HEIGHT - 7;
+    flash_thread_text = prep_screen_arrow_string;
+    flash_thread_duration = 1200000;
+    flash_thread_color_pair = 2;
     pthread_t prep_screen_arrow_thread;
     pthread_create(&prep_screen_arrow_thread, NULL, flashFromString, NULL);
 
     usleep(100000);
 
-    char *prep_screen_text = "GABRIEL (LANC UNI ID: 37526367) @ 2019     INSERT COINS     1 COIN 1 PLAY";
-    prep_screen_carousel_args = malloc(sizeof(*prep_screen_carousel_args));
-    *prep_screen_carousel_args = (struct carouselThreadArg){
-        .screen = prep_screen,
-        .live = 1,
-        .start_x = FRAME_WIDTH - 1,
-        .end_x = 0,
-        .y = FRAME_HEIGHT - 1,
-        .text = prep_screen_text,
-        .color_pair = 84,
-    };
+    carousel_thread_screen = prep_screen;
+    carousel_thread_live = 1;
+    carousel_thread_start_x = FRAME_WIDTH - 1;
+    carousel_thread_end_x = 0;
+    carousel_thread_y = FRAME_HEIGHT - 1;
+    carousel_thread_text = "GABRIEL (LANC UNI ID: 37526367) @ 2019     INSERT COINS     1 COIN 1 PLAY";
+    carousel_thread_color_pair = 84;
     pthread_t prep_screen_carousel_thread;
     pthread_create(&prep_screen_carousel_thread, NULL, carouselFromString, NULL);
+
     wgetch(prep_screen);
-    prep_screen_arrow_args->live = 0;
-    prep_screen_carousel_args->live = 0;
+    flash_thread_live = 0;
+    carousel_thread_live = 0;
     werase(prep_screen);
     delwin(prep_screen);
 
