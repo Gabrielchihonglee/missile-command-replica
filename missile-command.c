@@ -63,12 +63,17 @@ struct base {
     int num_of_missiles;
 };
 
-pthread_mutex_t lock;
+static pthread_mutex_t lock;
 
 static int start_explosion_pos[80][2];
 static char *STAGE_1, *STAGE_2;
 
-void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], int mode) { // mode 1: draw 0: erase/draw with backgound
+static enum drawMode {ERASE, DRAW};
+
+static struct carouselThreadArg *prep_screen_carousel_args;
+static struct flashThreadArg *prep_screen_arrow_args;
+
+void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], enum drawMode mode) { // mode 1: draw 0: erase/draw with backgound
     FILE *fp = fopen(file, "r");
     char symbol;
     int x, y;
@@ -82,7 +87,6 @@ void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], int mod
             case '#':
                 if (mode == 1) {
                     waddch(screen, ACS_CKBOARD);
-                    //waddch(screen, '#');
                 } else {
                     waddch(screen, ' ');
                 }
@@ -96,32 +100,10 @@ void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], int mod
                 break;
         }
         wrefresh(screen);
-        //nanosleep((const struct timespec[]){{0, 100000L}}, NULL);
     }
 }
 
-void drawFromFileExact(WINDOW *screen, int start_x, int start_y, char file[], int mode) {
-    FILE *fp = fopen(file, "r");
-    char symbol;
-    int x, y;
-    wmove(screen, start_y, start_x);
-    while ((symbol = getc(fp)) != EOF) {
-        //waddch(screen, symbol);
-        switch (symbol) {
-            case '\n':
-                getyx(screen, y, x);
-                wmove(screen, y + 1, start_x);
-                break;
-            default:
-                waddch(screen, symbol);
-                break;
-        }
-        wrefresh(screen);
-        //nanosleep((const struct timespec[]){{0, 100000L}}, NULL);
-    }
-}
-
-void drawFromString(WINDOW *screen, int start_x, int start_y, char *line, int mode) {
+void drawFromString(WINDOW *screen, int start_x, int start_y, char *line, enum drawMode mode) {
     int length = strlen(line);
     int x, y;
     wmove(screen, start_y, start_x);
@@ -142,8 +124,6 @@ void drawFromString(WINDOW *screen, int start_x, int start_y, char *line, int mo
                 getyx(screen, y, x);
                 wmove(screen, y + 1, start_x);
                 break;
-            case '\0':
-                break;
             default:
                 fprintf(stderr, "Unexpected character found: '%i'", line[i]);
                 break;
@@ -156,21 +136,21 @@ void updateSmallExplosionStage(WINDOW *screen, int from_missile, int to_missile,
     pthread_mutex_lock(&lock);
     wattron(screen, COLOR_PAIR(color));
     for (int i = from_missile; i < to_missile; i++) {
-        drawFromString(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_1, 1); // draw stage 1
+        drawFromString(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_1, DRAW); // draw stage 1
     }
     pthread_mutex_unlock(&lock);
     usleep(100000);
     pthread_mutex_lock(&lock);
     wattron(screen, COLOR_PAIR(color));
     for (int i = from_missile; i < to_missile; i++) {
-        drawFromString(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_2, 1); // draw stage 2
+        drawFromString(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_2, DRAW); // draw stage 2
     }
     pthread_mutex_unlock(&lock);
     usleep(100000);
     pthread_mutex_lock(&lock);
     wattron(screen, COLOR_PAIR(color));
     for (int i = from_missile; i < to_missile; i++) {
-        drawFromString(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_2, 0); // erase stage 2
+        drawFromString(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_2, ERASE); // erase stage 2
     }
     pthread_mutex_unlock(&lock);
     usleep(1000);
@@ -230,8 +210,6 @@ void killMissile(WINDOW *screen, void *missile_input) {
     struct missile *missile = missile_input;
     missile->live = 0;
     int remove_trace_complete = 0;
-    //missile->x = missile->start_x;
-    //missile->y = missile->start_y;
     pthread_mutex_lock(&lock);
     while (!remove_trace_complete) {
         if (abs(missile->x - missile->start_x) < 0.00001 && abs(missile->y - missile->start_y) < 0.00001) {
@@ -263,11 +241,11 @@ void *updateMissileExplosion(void *arguments) {
     fread(stage_2, 2, stage_2_length, explosion_small_stage_2);
     stage_2[stage_2_length] = '\0';
     fclose(explosion_small_stage_2);
-    drawFromString(screen, x, y, stage_2, 1);
+    drawFromString(screen, x, y, stage_2, DRAW);
     pthread_mutex_unlock(&lock);
     usleep(1000000);
     pthread_mutex_lock(&lock);
-    drawFromString(screen, x, y, stage_2, 0);
+    drawFromString(screen, x, y, stage_2, ERASE);
     pthread_mutex_unlock(&lock);
     free(arguments);
     return NULL;
@@ -287,21 +265,18 @@ void checkHitPlayer(WINDOW *screen, float x, float y) {
             };
             pthread_t missile_explosion_thread;
             pthread_create(&missile_explosion_thread, NULL, updateMissileExplosion, missile_explosion_args);
-            //pthread_mutex_lock(&lock);
-            //pthread_mutex_unlock(&lock);
         }
     }
 }
 
 void *flashFromString(void *arguments) {
-    struct flashThreadArg *args = arguments;
-    WINDOW *screen = args->screen;
-    int x = args->x;
-    int y = args->y;
-    char *text = args->text;
-    int duration = args->duration;
-    int color_pair = args->color_pair;
-    while (args->live) {
+    WINDOW *screen = prep_screen_arrow_args->screen;
+    int x = prep_screen_arrow_args->x;
+    int y = prep_screen_arrow_args->y;
+    char *text = prep_screen_arrow_args->text;
+    int duration = prep_screen_arrow_args->duration;
+    int color_pair = prep_screen_arrow_args->color_pair;
+    while (prep_screen_arrow_args->live) {
         pthread_mutex_lock(&lock);
         wattron(screen, COLOR_PAIR(color_pair));
         mvwprintw(screen, y, x, text);
@@ -317,23 +292,20 @@ void *flashFromString(void *arguments) {
         pthread_mutex_unlock(&lock);
         usleep(duration / 2);
     }
-    free(arguments);
+    free(prep_screen_arrow_args);
     return NULL;
 }
 
-void *carouselFromString(void *arguments) {
-    struct carouselThreadArg *args = arguments;
-    //free(arguments);
-    //usleep(1000000);
-    WINDOW *screen = args->screen;
-    int y = args->y;
-    int start_x = args->start_x;
-    int end_x = args->end_x;
-    char *text = args->text;
-    int color_pair = args -> color_pair;
+void *carouselFromString(void *argument) {
+    WINDOW *screen = prep_screen_carousel_args->screen;
+    int y = prep_screen_carousel_args->y;
+    int start_x = prep_screen_carousel_args->start_x;
+    int end_x = prep_screen_carousel_args->end_x;
+    char *text = prep_screen_carousel_args->text;
+    int color_pair = prep_screen_carousel_args->color_pair;
     wrefresh(screen);
     int head_x = start_x;
-    while (args->live) {
+    while (prep_screen_carousel_args->live) {
         pthread_mutex_lock(&lock);
         for (int i = 0; i < (FRAME_WIDTH - 1 - head_x) && i < strlen(text); i++) {
             if ((head_x + i) < end_x) {
@@ -354,12 +326,11 @@ void *carouselFromString(void *arguments) {
             head_x = start_x;
         }
     }
-    free(arguments);
+    free(prep_screen_carousel_args);
     return NULL;
 }
 
 void *updateHostileMissiles(void *arguments) {
-    //usleep(3000000);
     struct hostileMissilesThreadArg *args = arguments;
     WINDOW *screen = args->screen;
     struct missile *hostile_missiles = args->hostile_missiles;
@@ -402,8 +373,7 @@ void *updateHostileMissiles(void *arguments) {
 }
 
 int main() {
-    //srand(time(0));
-    srand(6837);
+    srand(time(0));
     initscr();
     raw();
     curs_set(0);
@@ -411,7 +381,6 @@ int main() {
     pthread_mutex_init(&lock, NULL);
 
     start_color();
-    //init_color(1, 255, 0, 0);
     init_pair(1, COLOR_BLACK, COLOR_BLACK);
     init_pair(2, COLOR_RED, COLOR_BLACK);
     init_pair(3, COLOR_GREEN, COLOR_BLACK);
@@ -426,7 +395,7 @@ int main() {
     WINDOW *start_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(start_screen, A_BOLD);
     wattron(start_screen, COLOR_PAIR(2));
-    drawFromFile(start_screen, START_PADDING_HORIZONTAL, START_PADDING_VERTICAL, "graphics/missile-command-text", 1);
+    drawFromFile(start_screen, START_PADDING_HORIZONTAL, START_PADDING_VERTICAL, "graphics/missile-command-text", DRAW);
     wrefresh(start_screen);
     usleep(1000000);
 
@@ -488,17 +457,17 @@ int main() {
     wattron(prep_screen, A_BOLD);
     noecho();
     wattron(prep_screen, COLOR_PAIR(84));
-    drawFromFile(prep_screen, 0, FRAME_HEIGHT - 6, "graphics/ground", 0);
+    drawFromFile(prep_screen, 0, FRAME_HEIGHT - 6, "graphics/ground", ERASE);
     int cities_x_pos[6] = {15, 30, 45, 70, 85, 100};
     for (int i = 0; i < 6; i++) {
         wattron(prep_screen, COLOR_PAIR(3));
-        drawFromFile(prep_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
+        drawFromFile(prep_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-1", DRAW);
         wattron(prep_screen, COLOR_PAIR(5));
-        drawFromFile(prep_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
+        drawFromFile(prep_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-2", DRAW);
     }
     wattron(prep_screen, COLOR_PAIR(5));
-    drawFromFile(prep_screen, 18, FRAME_HEIGHT - 15, "graphics/defend-text", 1);
-    drawFromFile(prep_screen, 72, FRAME_HEIGHT - 15, "graphics/cities-text", 1);
+    drawFromFile(prep_screen, 18, FRAME_HEIGHT - 15, "graphics/defend-text", DRAW);
+    drawFromFile(prep_screen, 72, FRAME_HEIGHT - 15, "graphics/cities-text", DRAW);
 
     int cur_score = 20;
     int high_score = 0;
@@ -513,10 +482,7 @@ int main() {
         prep_screen_arrow_string[cities_x_pos[i] + 3] = 'V';
     }
     prep_screen_arrow_string[FRAME_WIDTH - 1] = '\0';
-    //mvwprintw(prep_screen, 0, 0, prep_screen_arrow_string);
-    //wrefresh(prep_screen);
-    //usleep(1000000);
-    struct flashThreadArg *prep_screen_arrow_args = malloc(sizeof(*prep_screen_arrow_args));
+    prep_screen_arrow_args = malloc(sizeof(*prep_screen_arrow_args));
     *prep_screen_arrow_args = (struct flashThreadArg) {
         .screen = prep_screen,
         .live = 1,
@@ -527,26 +493,12 @@ int main() {
         .color_pair = 2,
     };
     pthread_t prep_screen_arrow_thread;
-    pthread_create(&prep_screen_arrow_thread, NULL, flashFromString, prep_screen_arrow_args);
+    pthread_create(&prep_screen_arrow_thread, NULL, flashFromString, NULL);
 
-    // following code kept for 'historic' reasons :P
-    // struct carouselThreadArg *prep_screen_carousel_args;
-    // prep_screen_carousel_args = malloc(sizeof(struct carouselThreadArg));
-    // struct carouselThreadArg temp_test = {
-    //     .screen = prep_screen,
-    //     .live = 1,
-    //     .start_x = 0,
-    //     .end_x = FRAME_WIDTH - 1,
-    //     .y = FRAME_HEIGHT - 1,
-    //     .text = prep_screen_text
-    // };
-    // prep_screen_carousel_args = temp_test;
-    // pthread_t prep_screen_carousel_thread;
-    // pthread_create(&prep_screen_carousel_thread, NULL, carouselFromString, prep_screen_carousel_args);
     usleep(100000);
 
     char *prep_screen_text = "GABRIEL (LANC UNI ID: 37526367) @ 2019     INSERT COINS     1 COIN 1 PLAY";
-    struct carouselThreadArg *prep_screen_carousel_args = malloc(sizeof(*prep_screen_carousel_args));
+    prep_screen_carousel_args = malloc(sizeof(*prep_screen_carousel_args));
     *prep_screen_carousel_args = (struct carouselThreadArg){
         .screen = prep_screen,
         .live = 1,
@@ -557,14 +509,12 @@ int main() {
         .color_pair = 84,
     };
     pthread_t prep_screen_carousel_thread;
-    pthread_create(&prep_screen_carousel_thread, NULL, carouselFromString, prep_screen_carousel_args);
+    pthread_create(&prep_screen_carousel_thread, NULL, carouselFromString, NULL);
     wgetch(prep_screen);
     prep_screen_arrow_args->live = 0;
     prep_screen_carousel_args->live = 0;
     werase(prep_screen);
     delwin(prep_screen);
-
-    //usleep(1000000);
 
     WINDOW *main_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(main_screen, A_BOLD);
@@ -576,13 +526,13 @@ int main() {
     erase();
 
     wattron(main_screen, COLOR_PAIR(84));
-    drawFromFile(main_screen, 0, FRAME_HEIGHT - 6, "graphics/ground", 0);
+    drawFromFile(main_screen, 0, FRAME_HEIGHT - 6, "graphics/ground", ERASE);
 
     for (int i = 0; i < 6; i++) {
         wattron(main_screen, COLOR_PAIR(3));
-        drawFromFile(main_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-1", 1);
+        drawFromFile(main_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-1", DRAW);
         wattron(main_screen, COLOR_PAIR(5));
-        drawFromFile(main_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-2", 1);
+        drawFromFile(main_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-2", DRAW);
     }
 
     wrefresh(main_screen);
@@ -626,11 +576,7 @@ int main() {
         dist = sqrtf(pow(hostile_missiles[i].x - rand_target_x, 2) + rand_target_y * rand_target_y);
         hostile_missiles[i].vel_x = (rand_target_x - hostile_missiles[i].x) / dist;
         hostile_missiles[i].vel_y = rand_target_y / dist;
-        //hostile_missiles[i].vel_y = sqrtf(hostile_missiles[i].vel_x * hostile_missiles[i].vel_x - 1);
-        //mvaddch(hostile_missiles[i].y, hostile_missiles[i].x, '.');
     }
-
-    //usleep(1000000);
 
     struct hostileMissilesThreadArg *hostile_missiles_args = malloc(sizeof(*hostile_missiles_args));
     *hostile_missiles_args = (struct hostileMissilesThreadArg) {
@@ -643,8 +589,6 @@ int main() {
     pthread_create(&hostile_missiles_thread, NULL, updateHostileMissiles, hostile_missiles_args);
 
     while (1) {
-        //updateHostileMissile(main_screen, hostile_missiles);
-        //usleep(100000);
         for (int i = 0; i < 5; i++) {
             if (hostile_missiles[i].live) {
                 pthread_mutex_lock(&lock);
@@ -738,8 +682,6 @@ int main() {
                 break;
         }
     }
-
-    //wgetch(main_screen);
 
     endwin();
     pthread_mutex_destroy(&lock);
