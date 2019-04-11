@@ -102,5 +102,7 @@ void prep() {
     flash_thread_live = 0;
     carousel_thread_live = 0;
     werase(prep_screen);
+    pthread_join(prep_screen_arrow_thread, NULL);
+    pthread_join(prep_screen_carousel_thread, NULL);
     delwin(prep_screen);
 }
