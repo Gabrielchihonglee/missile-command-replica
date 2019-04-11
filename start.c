@@ -34,8 +34,8 @@ void start() {
 
     for (int i = 0; i < 80; i++) {
         if (i % 3 == 0) {
-            start_explosion_pos[i][0] = rand() % FRAME_WIDTH - 3;
-            start_explosion_pos[i][1] = rand() % FRAME_HEIGHT - 3;
+            start_explosion_pos[i][0] = rand() % (FRAME_WIDTH - 3);
+            start_explosion_pos[i][1] = rand() % (FRAME_HEIGHT - 3);
         } else {
             start_explosion_pos[i][0] = rand() % 63 + START_PADDING_HORIZONTAL - 2;
             start_explosion_pos[i][1] = rand() % 16 + START_PADDING_VERTICAL - 2;

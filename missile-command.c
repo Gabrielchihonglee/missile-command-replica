@@ -14,7 +14,7 @@
 
 int main() {
     //srand(time(0));
-    srand(6197);
+    srand(611715);
     initscr();
     raw();
     curs_set(0);

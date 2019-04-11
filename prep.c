@@ -33,6 +33,9 @@ void *flashFromString(void *arguments) {
         mvwprintw(flash_thread_screen, flash_thread_y, flash_thread_x, flash_thread_text);
         wrefresh(flash_thread_screen);
         pthread_mutex_unlock(&lock);
+        if (!flash_thread_live) {
+            break;
+        }
         usleep(flash_thread_duration / 2);
         pthread_mutex_lock(&lock);
         wattron(flash_thread_screen, COLOR_PAIR(flash_thread_color_pair));
@@ -41,6 +44,9 @@ void *flashFromString(void *arguments) {
             wrefresh(flash_thread_screen);
         }
         pthread_mutex_unlock(&lock);
+        if (!flash_thread_live) {
+            break;
+        }
         usleep(flash_thread_duration / 2);
     }
     return NULL;
@@ -99,9 +105,9 @@ void prep() {
     pthread_create(&prep_screen_carousel_thread, NULL, carouselFromString, NULL);
 
     wgetch(prep_screen);
+    werase(prep_screen);
     flash_thread_live = 0;
     carousel_thread_live = 0;
-    werase(prep_screen);
     pthread_join(prep_screen_arrow_thread, NULL);
     pthread_join(prep_screen_carousel_thread, NULL);
     delwin(prep_screen);
