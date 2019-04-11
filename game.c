@@ -248,7 +248,9 @@ void game() {
     pthread_t hostile_missiles_thread;
     pthread_create(&hostile_missiles_thread, NULL, updateHostileMissiles, NULL);
 
-    while (1) {
+    int main_loop_run = 1;
+
+    while (main_loop_run) {
         for (int i = 0; i < 5; i++) {
             if (hostile_missiles[i].live) {
                 pthread_mutex_lock(&lock);
@@ -337,6 +339,7 @@ void game() {
                 break;
             case 'q':
                 update_missile_thread_live = 0;
+                main_loop_run = 0;
                 endwin();
                 break;
         }
