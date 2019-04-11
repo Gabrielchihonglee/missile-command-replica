@@ -1,3 +1,16 @@
+#ifndef FUNCTIONS_H
+#define FUNCTIONS_H
+
+#include <ncurses.h>
+#include <math.h>
+#include <pthread.h>
+
+#define FRAME_WIDTH 124
+#define FRAME_HEIGHT 40
+
+#define START_PADDING_HORIZONTAL 30
+#define START_PADDING_VERTICAL 12
+
 extern pthread_mutex_t lock;
 
 extern int start_explosion_pos[80][2];
@@ -20,3 +33,5 @@ void updateSmallExplosionStage(WINDOW *screen, int from_missile, int to_missile,
 void refreshHighScore(WINDOW *screen, int cur_score, int high_score);
 
 void *carouselFromString(void *argument);
+
+#endif

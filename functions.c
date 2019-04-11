@@ -1,8 +1,13 @@
-#define FRAME_WIDTH 124
-#define FRAME_HEIGHT 40
+#include "functions.h"
 
-#define START_PADDING_HORIZONTAL 30
-#define START_PADDING_VERTICAL 12
+#include <ncurses.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <time.h>
+#include <pthread.h>
 
 struct carouselThreadArg {
     WINDOW *screen;
@@ -12,18 +17,18 @@ struct carouselThreadArg {
     int color_pair;
 };
 
-static pthread_mutex_t lock;
+pthread_mutex_t lock;
 
-static int start_explosion_pos[80][2];
-static char *STAGE_1, *STAGE_2;
+int start_explosion_pos[80][2];
+char *STAGE_1, *STAGE_2;
 
-static enum drawMode {ERASE, DRAW};
+//enum drawMode {ERASE, DRAW};
 
-static WINDOW *carousel_thread_screen;
-static int carousel_thread_live;
-static int carousel_thread_start_x, carousel_thread_end_x, carousel_thread_y;
-static char *carousel_thread_text;
-static int carousel_thread_color_pair;
+WINDOW *carousel_thread_screen;
+int carousel_thread_live;
+int carousel_thread_start_x, carousel_thread_end_x, carousel_thread_y;
+char *carousel_thread_text;
+int carousel_thread_color_pair;
 
 void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], enum drawMode mode) { // mode 1: draw 0: erase/draw with backgound
     FILE *fp = fopen(file, "r");

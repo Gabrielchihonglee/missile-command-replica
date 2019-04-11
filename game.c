@@ -1,3 +1,15 @@
+#include "game.h"
+#include "functions.h"
+
+#include <ncurses.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <time.h>
+#include <pthread.h>
+
 struct missile {
     int type; // 0: player; 1: hostile normal; 2: hostile crazy
     int start_x, start_y;
@@ -164,7 +176,7 @@ void *updateHostileMissiles(void *arguments) {
 }
 
 
-game() {
+void game() {
     WINDOW *main_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(main_screen, A_BOLD);
     keypad(main_screen, TRUE);
@@ -326,7 +338,6 @@ game() {
             case 'q':
                 update_missile_thread_live = 0;
                 endwin();
-                return 0;
                 break;
         }
     }

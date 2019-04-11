@@ -1,3 +1,15 @@
+#include "start.h"
+#include "functions.h"
+
+#include <ncurses.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <time.h>
+#include <pthread.h>
+
 void startScreenTextColor(WINDOW *screen, int color) {
     wattron(screen, COLOR_PAIR(color));
     pthread_mutex_lock(&lock);

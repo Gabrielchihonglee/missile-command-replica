@@ -1,3 +1,15 @@
+#include "prep.h"
+#include "functions.h"
+
+#include <ncurses.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <time.h>
+#include <pthread.h>
+
 struct flashThreadArg {
     WINDOW *screen;
     int live;
