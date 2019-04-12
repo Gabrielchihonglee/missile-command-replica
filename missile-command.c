@@ -13,8 +13,8 @@
 #include "game.h"
 
 int main() {
-    //srand(time(0));
-    srand(611715);
+    srand(time(0));
+    //srand(611715);
     initscr();
     raw();
     curs_set(0);

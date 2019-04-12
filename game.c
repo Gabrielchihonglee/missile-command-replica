@@ -22,7 +22,7 @@ struct missile {
 
 struct missileExplosionThreadArg {
     WINDOW *screen;
-    int clean_x, clean_y;
+    int city_x, city_y;
     int x, y;
 };
 
@@ -47,6 +47,8 @@ static WINDOW *update_missile_thread_screen;
 static int update_missile_thread_live;
 static struct missile *update_missile_thread_hostile_missiles;
 static struct missile *update_missile_thread_player_missiles;
+
+char *STAGE_1, *STAGE_2;
 
 void shootPlayerMissile(void *player_missiless, int tar_x, int tar_y, int base) {
     struct missile *player_missiles = player_missiless;
@@ -92,29 +94,21 @@ void killMissile(WINDOW *screen, void *missile_input) {
 
 void *updateMissileExplosion(void *arguments) {
     struct missileExplosionThreadArg *args = arguments;
-    WINDOW *screen = args->screen;
-    int clean_x = args->clean_x;
-    int clean_y = args->clean_y;
-    int x = args->x;
-    int y = args->y;
-    pthread_mutex_lock(&lock);
+
     usleep(10000);
-    mvwprintw(screen, clean_y, clean_x, "       ");
-    mvwprintw(screen, clean_y + 1, clean_x, "       ");
-    FILE *explosion_small_stage_2 = fopen("graphics/explosion-small-stage-2", "r");
-    fseek (explosion_small_stage_2, 0, SEEK_END);
-    int stage_2_length = ftell(explosion_small_stage_2);
-    fseek (explosion_small_stage_2, 0, SEEK_SET);
-    char *stage_2 = malloc(stage_2_length + 1);
-    fread(stage_2, 2, stage_2_length, explosion_small_stage_2);
-    stage_2[stage_2_length] = '\0';
-    fclose(explosion_small_stage_2);
-    drawFromString(screen, x, y, stage_2, DRAW);
-    pthread_mutex_unlock(&lock);
-    usleep(1000000);
+
     pthread_mutex_lock(&lock);
-    drawFromString(screen, x, y, stage_2, ERASE);
+    //mvwprintw(args->screen, args->city_y, city_x, "       ");
+    //mvwprintw(args->screen, args->city_y + 1, city_x, "       ");
+    drawFromString(args->screen, args->x, args->y, STAGE_2, DRAW);
     pthread_mutex_unlock(&lock);
+
+    usleep(1000000);
+
+    pthread_mutex_lock(&lock);
+    drawFromString(args->screen, args->x, args->y, STAGE_2, ERASE);
+    pthread_mutex_unlock(&lock);
+
     free(arguments);
     return NULL;
 }
@@ -126,8 +120,8 @@ void checkHitPlayer(WINDOW *screen, float x, float y) {
             struct missileExplosionThreadArg *missile_explosion_args = malloc(sizeof(*missile_explosion_args));
             *missile_explosion_args = (struct missileExplosionThreadArg) {
                 .screen = screen,
-                .clean_x = cities_x_pos[i],
-                .clean_y = FRAME_HEIGHT - 4,
+                .city_x = cities_x_pos[i],
+                .city_y = FRAME_HEIGHT - 4,
                 .x = round(x),
                 .y = round(y)
             };
@@ -140,23 +134,38 @@ void checkHitPlayer(WINDOW *screen, float x, float y) {
 void *updateHostileMissiles(void *arguments) {
     int counter = 0;
     while (update_missile_thread_live) {
-        usleep(20000);
+        usleep(100000);
         if (counter < 4) {
             counter++;
         } else {
             counter = 0;
         }
         if (!counter) {
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < 10; i++) {
                 if (update_missile_thread_hostile_missiles[i].live) {
                     if (abs(update_missile_thread_hostile_missiles[i].x - update_missile_thread_hostile_missiles[i].tar_x) < 0.00001 && abs(update_missile_thread_hostile_missiles[i].y - update_missile_thread_hostile_missiles[i].tar_y) < 0.00001) {
                         checkHitPlayer(update_missile_thread_screen, update_missile_thread_hostile_missiles[i].x, update_missile_thread_hostile_missiles[i].y);
                         killMissile(update_missile_thread_screen, &update_missile_thread_hostile_missiles[i]);
                     }
+
                     update_missile_thread_hostile_missiles[i].old_x = update_missile_thread_hostile_missiles[i].x;
                     update_missile_thread_hostile_missiles[i].old_y = update_missile_thread_hostile_missiles[i].y;
                     update_missile_thread_hostile_missiles[i].x += update_missile_thread_hostile_missiles[i].vel_x;
                     update_missile_thread_hostile_missiles[i].y += update_missile_thread_hostile_missiles[i].vel_y;
+
+                    pthread_mutex_lock(&lock);
+                    wattron(update_missile_thread_screen, COLOR_PAIR(2));
+                    if (round(update_missile_thread_hostile_missiles[i].vel_x) > 0) {
+                        mvwaddch(update_missile_thread_screen, round(update_missile_thread_hostile_missiles[i].old_y), round(update_missile_thread_hostile_missiles[i].old_x), '\\');
+                    }
+                    else if (round(update_missile_thread_hostile_missiles[i].vel_x) < 0) {
+                        mvwaddch(update_missile_thread_screen, round(update_missile_thread_hostile_missiles[i].old_y), round(update_missile_thread_hostile_missiles[i].old_x), '/');
+                    } else {
+                        mvwaddch(update_missile_thread_screen, round(update_missile_thread_hostile_missiles[i].old_y), round(update_missile_thread_hostile_missiles[i].old_x), '|');
+                    }
+                    wattron(update_missile_thread_screen, COLOR_PAIR(8));
+                    mvwaddch(update_missile_thread_screen, round(update_missile_thread_hostile_missiles[i].y), round(update_missile_thread_hostile_missiles[i].x), '.');
+                    pthread_mutex_unlock(&lock);
                 }
             }
         }
@@ -165,10 +174,25 @@ void *updateHostileMissiles(void *arguments) {
                 if (abs(update_missile_thread_player_missiles[i].x - update_missile_thread_player_missiles[i].tar_x) < 0.00001 && abs(update_missile_thread_player_missiles[i].y - update_missile_thread_player_missiles[i].tar_y) < 0.00001) {
                     killMissile(update_missile_thread_screen, &update_missile_thread_player_missiles[i]);
                 }
+
                 update_missile_thread_player_missiles[i].old_x = update_missile_thread_player_missiles[i].x;
                 update_missile_thread_player_missiles[i].old_y = update_missile_thread_player_missiles[i].y;
                 update_missile_thread_player_missiles[i].x += update_missile_thread_player_missiles[i].vel_x;
                 update_missile_thread_player_missiles[i].y += update_missile_thread_player_missiles[i].vel_y;
+
+                pthread_mutex_lock(&lock);
+                wattron(update_missile_thread_screen, COLOR_PAIR(5));
+                if (round(update_missile_thread_player_missiles[i].vel_x) > 0) {
+                    mvwaddch(update_missile_thread_screen, round(update_missile_thread_player_missiles[i].old_y), round(update_missile_thread_player_missiles[i].old_x), '/');
+                }
+                else if (round(update_missile_thread_player_missiles[i].vel_x) < 0) {
+                    mvwaddch(update_missile_thread_screen, round(update_missile_thread_player_missiles[i].old_y), round(update_missile_thread_player_missiles[i].old_x), '\\');
+                } else {
+                    mvwaddch(update_missile_thread_screen, round(update_missile_thread_player_missiles[i].old_y), round(update_missile_thread_player_missiles[i].old_x), '|');
+                }
+                wattron(update_missile_thread_screen, COLOR_PAIR(8));
+                mvwaddch(update_missile_thread_screen, round(update_missile_thread_player_missiles[i].y), round(update_missile_thread_player_missiles[i].x), '.');
+                pthread_mutex_unlock(&lock);
             }
         }
     }
@@ -215,7 +239,7 @@ void game() {
     int rand_target_type;
     int rand_target_x, rand_target_y;
     float dist;
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 10; i++) {
         rand_target_type = rand() % 2 - 1;
         if (rand_target_type) {
             rand_target_x = cities_x_pos[rand() % 6] + 3;
@@ -251,40 +275,6 @@ void game() {
     int main_loop_run = 1;
 
     while (main_loop_run) {
-        for (int i = 0; i < 5; i++) {
-            if (hostile_missiles[i].live) {
-                pthread_mutex_lock(&lock);
-                wattron(main_screen, COLOR_PAIR(2));
-                if (round(hostile_missiles[i].vel_x) > 0) {
-                    mvwaddch(main_screen, round(hostile_missiles[i].old_y), round(hostile_missiles[i].old_x), '\\');
-                }
-                else if (round(hostile_missiles[i].vel_x) < 0) {
-                    mvwaddch(main_screen, round(hostile_missiles[i].old_y), round(hostile_missiles[i].old_x), '/');
-                } else {
-                    mvwaddch(main_screen, round(hostile_missiles[i].old_y), round(hostile_missiles[i].old_x), '|');
-                }
-                wattron(main_screen, COLOR_PAIR(8));
-                mvwaddch(main_screen, round(hostile_missiles[i].y), round(hostile_missiles[i].x), '.');
-                pthread_mutex_unlock(&lock);
-            }
-        }
-        for (int i = 0; i < 30; i++) {
-            if (player_missiles[i].live) {
-                pthread_mutex_lock(&lock);
-                wattron(main_screen, COLOR_PAIR(5));
-                if (round(player_missiles[i].vel_x) > 0) {
-                    mvwaddch(main_screen, round(player_missiles[i].old_y), round(player_missiles[i].old_x), '/');
-                }
-                else if (round(player_missiles[i].vel_x) < 0) {
-                    mvwaddch(main_screen, round(player_missiles[i].old_y), round(player_missiles[i].old_x), '\\');
-                } else {
-                    mvwaddch(main_screen, round(player_missiles[i].old_y), round(player_missiles[i].old_x), '|');
-                }
-                wattron(main_screen, COLOR_PAIR(8));
-                mvwaddch(main_screen, round(player_missiles[i].y), round(player_missiles[i].x), '.');
-                pthread_mutex_unlock(&lock);
-            }
-        }
         wrefresh(main_screen);
         input = wgetch(main_screen);
         switch(input) {
