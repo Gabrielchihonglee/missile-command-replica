@@ -134,7 +134,7 @@ void checkHitPlayer(WINDOW *screen, float x, float y) {
 void *updateHostileMissiles(void *arguments) {
     int counter = 0;
     while (update_missile_thread_live) {
-        usleep(100000);
+        usleep(20000);
         if (counter < 4) {
             counter++;
         } else {
@@ -275,7 +275,10 @@ void game() {
     int main_loop_run = 1;
 
     while (main_loop_run) {
+        usleep(10000);
+        pthread_mutex_lock(&lock);
         wrefresh(main_screen);
+        pthread_mutex_unlock(&lock);
         input = wgetch(main_screen);
         switch(input) {
             case KEY_LEFT:
