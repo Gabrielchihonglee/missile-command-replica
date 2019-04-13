@@ -79,16 +79,12 @@ void shootPlayerMissile(void *player_missiless, int tar_x, int tar_y, int base) 
 
 void killMissile(WINDOW *screen, void *missile_input) {
     struct missile *missile = missile_input;
-    missile->live = 0;
-    int remove_trace_complete = 0;
-    //missile->x -= missile->vel_x;
-    //missile->y -= missile->vel_y;
     pthread_mutex_lock(&lock);
-    while (!remove_trace_complete) {
-        mvwaddch(screen, round(missile->y), round(missile->x), 'x');
+    while (1) {
         if (abs(missile->x - missile->start_x) < 0.00001 && abs(missile->y - missile->start_y) < 0.00001) {
-            remove_trace_complete = 1;
+            break;
         }
+        mvwaddch(screen, round(missile->y), round(missile->x), 'x');
         missile->x -= missile->vel_x;
         missile->y -= missile->vel_y;
     }
@@ -188,12 +184,10 @@ void *updateHostileMissiles(void *arguments) {
                         checkHitPlayer(game_screen, update_missile_thread_hostile_missiles[i].x, update_missile_thread_hostile_missiles[i].y);
                         killMissile(game_screen, &update_missile_thread_hostile_missiles[i]);
                     } else {
-
                         update_missile_thread_hostile_missiles[i].old_x = update_missile_thread_hostile_missiles[i].x;
                         update_missile_thread_hostile_missiles[i].old_y = update_missile_thread_hostile_missiles[i].y;
                         update_missile_thread_hostile_missiles[i].x += update_missile_thread_hostile_missiles[i].vel_x;
                         update_missile_thread_hostile_missiles[i].y += update_missile_thread_hostile_missiles[i].vel_y;
-
                         pthread_mutex_lock(&lock);
                         wattron(game_screen, COLOR_PAIR(2));
                         if (round(update_missile_thread_hostile_missiles[i].vel_x) > 0) {
