@@ -81,12 +81,14 @@ void killMissile(WINDOW *screen, void *missile_input) {
     struct missile *missile = missile_input;
     missile->live = 0;
     int remove_trace_complete = 0;
+    //missile->x -= missile->vel_x;
+    //missile->y -= missile->vel_y;
     pthread_mutex_lock(&lock);
     while (!remove_trace_complete) {
+        mvwaddch(screen, round(missile->y), round(missile->x), 'x');
         if (abs(missile->x - missile->start_x) < 0.00001 && abs(missile->y - missile->start_y) < 0.00001) {
             remove_trace_complete = 1;
         }
-        mvwaddch(screen, round(missile->y), round(missile->x), ' ');
         missile->x -= missile->vel_x;
         missile->y -= missile->vel_y;
     }
@@ -99,8 +101,8 @@ void *updateMissileExplosion(void *arguments) {
     usleep(10000);
 
     pthread_mutex_lock(&lock);
-    //mvwprintw(args->screen, args->city_y, city_x, "       ");
-    //mvwprintw(args->screen, args->city_y + 1, city_x, "       ");
+    mvwprintw(args->screen, args->city_y, args->city_x, "       ");
+    mvwprintw(args->screen, args->city_y + 1, args->city_x, "       ");
     drawFromString(args->screen, args->x, args->y, STAGE_2, DRAW);
     pthread_mutex_unlock(&lock);
 
@@ -182,28 +184,30 @@ void *updateHostileMissiles(void *arguments) {
             for (int i = 0; i < 10; i++) {
                 if (update_missile_thread_hostile_missiles[i].live) {
                     if (abs(update_missile_thread_hostile_missiles[i].x - update_missile_thread_hostile_missiles[i].tar_x) < 0.00001 && abs(update_missile_thread_hostile_missiles[i].y - update_missile_thread_hostile_missiles[i].tar_y) < 0.00001) {
+                        update_missile_thread_hostile_missiles[i].live = 0;
                         checkHitPlayer(game_screen, update_missile_thread_hostile_missiles[i].x, update_missile_thread_hostile_missiles[i].y);
                         killMissile(game_screen, &update_missile_thread_hostile_missiles[i]);
-                    }
-
-                    update_missile_thread_hostile_missiles[i].old_x = update_missile_thread_hostile_missiles[i].x;
-                    update_missile_thread_hostile_missiles[i].old_y = update_missile_thread_hostile_missiles[i].y;
-                    update_missile_thread_hostile_missiles[i].x += update_missile_thread_hostile_missiles[i].vel_x;
-                    update_missile_thread_hostile_missiles[i].y += update_missile_thread_hostile_missiles[i].vel_y;
-
-                    pthread_mutex_lock(&lock);
-                    wattron(game_screen, COLOR_PAIR(2));
-                    if (round(update_missile_thread_hostile_missiles[i].vel_x) > 0) {
-                        mvwaddch(game_screen, round(update_missile_thread_hostile_missiles[i].old_y), round(update_missile_thread_hostile_missiles[i].old_x), '\\');
-                    }
-                    else if (round(update_missile_thread_hostile_missiles[i].vel_x) < 0) {
-                        mvwaddch(game_screen, round(update_missile_thread_hostile_missiles[i].old_y), round(update_missile_thread_hostile_missiles[i].old_x), '/');
                     } else {
-                        mvwaddch(game_screen, round(update_missile_thread_hostile_missiles[i].old_y), round(update_missile_thread_hostile_missiles[i].old_x), '|');
+
+                        update_missile_thread_hostile_missiles[i].old_x = update_missile_thread_hostile_missiles[i].x;
+                        update_missile_thread_hostile_missiles[i].old_y = update_missile_thread_hostile_missiles[i].y;
+                        update_missile_thread_hostile_missiles[i].x += update_missile_thread_hostile_missiles[i].vel_x;
+                        update_missile_thread_hostile_missiles[i].y += update_missile_thread_hostile_missiles[i].vel_y;
+
+                        pthread_mutex_lock(&lock);
+                        wattron(game_screen, COLOR_PAIR(2));
+                        if (round(update_missile_thread_hostile_missiles[i].vel_x) > 0) {
+                            mvwaddch(game_screen, round(update_missile_thread_hostile_missiles[i].old_y), round(update_missile_thread_hostile_missiles[i].old_x), '\\');
+                        }
+                        else if (round(update_missile_thread_hostile_missiles[i].vel_x) < 0) {
+                            mvwaddch(game_screen, round(update_missile_thread_hostile_missiles[i].old_y), round(update_missile_thread_hostile_missiles[i].old_x), '/');
+                        } else {
+                            mvwaddch(game_screen, round(update_missile_thread_hostile_missiles[i].old_y), round(update_missile_thread_hostile_missiles[i].old_x), '|');
+                        }
+                        wattron(game_screen, COLOR_PAIR(8));
+                        mvwaddch(game_screen, round(update_missile_thread_hostile_missiles[i].y), round(update_missile_thread_hostile_missiles[i].x), '.');
+                        pthread_mutex_unlock(&lock);
                     }
-                    wattron(game_screen, COLOR_PAIR(8));
-                    mvwaddch(game_screen, round(update_missile_thread_hostile_missiles[i].y), round(update_missile_thread_hostile_missiles[i].x), '.');
-                    pthread_mutex_unlock(&lock);
                 }
             }
         }

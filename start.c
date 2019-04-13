@@ -80,7 +80,7 @@ void start() {
     }
 
     usleep(1000000);
-    wattron(start_screen, COLOR_PAIR(84));
+    wattron(start_screen, COLOR_PAIR(8));
     mvwprintw(start_screen, FRAME_HEIGHT - 1, FRAME_WIDTH / 2 - strlen("PRESS ANY KEY TO CONTINUE") / 2, "PRESS ANY KEY TO CONTINUE");
     wgetch(start_screen);
     werase(start_screen);
