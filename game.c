@@ -87,8 +87,10 @@ void updateMissileCount() {
     char missile_count[3];
     for (int i = 0; i < 3; i++) {
         if (!bases[i].missile_count) {
+            pthread_mutex_lock(&lock);
             wattron(game_screen, COLOR_PAIR(84));
             mvwprintw(game_screen, bases[i].y + 4, bases[i].x + 4, "OUT");
+            pthread_mutex_unlock(&lock);
         } else {
             sprintf(missile_count, "%i", bases[i].missile_count);
             pthread_mutex_lock(&lock);
