@@ -60,6 +60,24 @@ void start() {
     STAGE_2[stage_2_length] = '\0';
     fclose(explosion_small_stage_2);
 
+    FILE *explosion_large_stage_1 = fopen("graphics/explosion-large-stage-1", "r");
+    fseek (explosion_large_stage_1, 0, SEEK_END);
+    int large_stage_1_length = ftell(explosion_large_stage_1);
+    LARGE_STAGE_1 = malloc(sizeof(char) * large_stage_1_length + 1);
+    fseek (explosion_large_stage_1, 0, SEEK_SET);
+    fread(LARGE_STAGE_1, 1, large_stage_1_length, explosion_large_stage_1);
+    LARGE_STAGE_1[large_stage_1_length] = '\0';
+    fclose(explosion_large_stage_1);
+
+    FILE *explosion_large_stage_3 = fopen("graphics/explosion-large-stage-2", "r");
+    fseek (explosion_large_stage_3, 0, SEEK_END);
+    int large_stage_2_length = ftell(explosion_large_stage_3);
+    LARGE_STAGE_2 = malloc(sizeof(char) * large_stage_2_length + 1);
+    fseek (explosion_large_stage_3, 0, SEEK_SET);
+    fread(LARGE_STAGE_2, 2, large_stage_2_length, explosion_large_stage_3);
+    LARGE_STAGE_2[large_stage_2_length] = '\0';
+    fclose(explosion_large_stage_3);
+
     for (int i = 0; i < 2; i++) {
         updateSmallExplosionStage(start_screen, 0, 10, 4);
         startScreenTextColor(start_screen, 3);

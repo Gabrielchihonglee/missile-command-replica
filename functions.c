@@ -20,7 +20,7 @@ struct carouselThreadArg {
 pthread_mutex_t lock;
 
 int start_explosion_pos[80][2];
-char *STAGE_1, *STAGE_2;
+char *STAGE_1, *STAGE_2, *LARGE_STAGE_1, *LARGE_STAGE_2;
 
 //enum drawMode {ERASE, DRAW};
 

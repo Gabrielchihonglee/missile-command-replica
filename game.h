@@ -13,6 +13,10 @@ void checkHitPlayer(WINDOW *screen, float x, float y);
 
 void *updateHostileMissiles(void *arguments);
 
+void *inputListener(void *arguments);
+
+void updateMissileCount();
+
 void game();
 
 #endif
