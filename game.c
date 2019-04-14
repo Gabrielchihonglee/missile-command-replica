@@ -11,7 +11,7 @@
 #include <pthread.h>
 
 struct missile {
-    int type; // 0: player; 1: hostile normal; 2: hostile crazy
+    enum missileType type;
     int start_x, start_y;
     float x, y;
     float old_x, old_y;
@@ -58,7 +58,7 @@ void shootPlayerMissile(void *player_missiless, int tar_x, int tar_y, int base) 
     struct missile *player_missiles = player_missiless;
     float dist;
     struct missile player_missile = {
-        .type = 0,
+        .type = PLAYER,
         .start_x =  base * 55 - 50,
         .x = base * 55 - 50,
         .start_y = FRAME_HEIGHT - 7,
@@ -179,6 +179,22 @@ void checkHitPlayer(float x, float y) {
     }
 }
 
+void checkHitHostile(float x, float y) {
+    for (int i = 0; i < 10; i++) {
+        if (update_missile_thread_hostile_missiles[i].live && fabsf(x - update_missile_thread_hostile_missiles[i].x) < 5 && fabsf(y - update_missile_thread_hostile_missiles[i].y) < 5) {
+            killMissile(&update_missile_thread_hostile_missiles[i]);
+            struct missileExplosionThreadArg *missile_explosion_args = malloc(sizeof(*missile_explosion_args));
+            *missile_explosion_args = (struct missileExplosionThreadArg) {
+                .screen = game_screen,
+                .x = round(x),
+                .y = round(y)
+            };
+            pthread_t missile_explosion_thread;
+            pthread_create(&missile_explosion_thread, NULL, updateMissileExplosion, missile_explosion_args);
+        }
+    }
+}
+
 void *genHostileMissiles(void *arguments) {
     int rand_target_type;
     int rand_target_x, rand_target_y;
@@ -195,7 +211,7 @@ void *genHostileMissiles(void *arguments) {
         }
         update_missile_thread_hostile_missiles[i] = (struct missile) {
             .live = 1,
-            .type = 1,
+            .type = HOSTILE_NORMAL,
             .start_x = (rand() % (FRAME_WIDTH - 1)),
             .start_y = 0,
             .y = 0,
@@ -215,7 +231,7 @@ void *genHostileMissiles(void *arguments) {
 void *updateHostileMissiles(void *arguments) {
     int counter = 0;
     while (update_missile_thread_live) {
-        usleep(20000);
+        usleep(100000);
         if (counter < 4) {
             counter++;
         } else {
@@ -254,7 +270,7 @@ void *updateHostileMissiles(void *arguments) {
             if (update_missile_thread_player_missiles[i].live) {
                 if (fabsf(update_missile_thread_player_missiles[i].x - update_missile_thread_player_missiles[i].tar_x) < 1 && fabsf(update_missile_thread_player_missiles[i].y - update_missile_thread_player_missiles[i].tar_y) < 1) {
                     update_missile_thread_player_missiles[i].live = 0;
-                    checkHitPlayer(update_missile_thread_player_missiles[i].x, update_missile_thread_player_missiles[i].y);
+                    checkHitHostile(update_missile_thread_player_missiles[i].x, update_missile_thread_player_missiles[i].y);
                     killMissile(&update_missile_thread_player_missiles[i]);
                 }
 
