@@ -22,7 +22,6 @@ struct missile {
 
 struct missileExplosionThreadArg {
     WINDOW *screen;
-    int city_x, city_y;
     int x, y;
 };
 
@@ -36,7 +35,7 @@ struct hostileMissilesThreadArg {
 struct city {
     int x, y;
     int survive;
-};
+} cities[6];
 
 struct base {
     int x, y;
@@ -102,11 +101,12 @@ void updateMissileCount() {
     }
 }
 
-void killMissile(WINDOW *screen, void *missile_input) {
+void killMissile(void *missile_input) {
     struct missile *missile = missile_input;
     pthread_mutex_lock(&lock);
+    wattron(game_screen, COLOR_PAIR(1));
     while (1) {
-        mvwaddch(screen, round(missile->y), round(missile->x), ' ');
+        mvwaddch(game_screen, round(missile->y), round(missile->x), ' ');
         if (fabsf(missile->x - missile->start_x) < 0.00001 && fabsf(missile->y - missile->start_y) < 0.00001) {
             break;
         }
@@ -141,16 +141,18 @@ void *updateMissileExplosion(void *arguments) {
     return NULL;
 }
 
-void checkHitPlayer(WINDOW *screen, float x, float y) {
-    int cities_x_pos[6] = {15, 30, 45, 70, 85, 100};
+void checkHitPlayer(float x, float y) {
     for (int i = 0; i < 6; i++) {
-        //if (abs(x - cities_x_pos[i] - 3) < 1) {
         if ((x >= cities_x_pos[i]) && (x <= (cities_x_pos[i] + 6))) {
+            pthread_mutex_lock(&lock);
+            wattron(game_screen, COLOR_PAIR(3));
+            mvwprintw(game_screen, FRAME_HEIGHT - 4, cities_x_pos[i], "       ");
+            mvwprintw(game_screen, FRAME_HEIGHT - 3, cities_x_pos[i], "       ");
+            pthread_mutex_unlock(&lock);
+            cities[i].survive = -1;
             struct missileExplosionThreadArg *missile_explosion_args = malloc(sizeof(*missile_explosion_args));
             *missile_explosion_args = (struct missileExplosionThreadArg) {
-                .screen = screen,
-                .city_x = cities_x_pos[i],
-                .city_y = FRAME_HEIGHT - 4,
+                .screen = game_screen,
                 .x = round(x),
                 .y = round(y)
             };
@@ -160,11 +162,14 @@ void checkHitPlayer(WINDOW *screen, float x, float y) {
     }
     for (int i = 0; i < 3; i++) {
         if ((x >= bases[i].x) && (x <= (bases[i].x + 7))) {
+            bases[i].missile_count = 0;
+            pthread_mutex_lock(&lock);
+            drawFromFile(game_screen, bases[i].x, FRAME_HEIGHT - 6, "graphics/base", ERASE);
+            pthread_mutex_unlock(&lock);
+            updateMissileCount();
             struct missileExplosionThreadArg *missile_explosion_args = malloc(sizeof(*missile_explosion_args));
             *missile_explosion_args = (struct missileExplosionThreadArg) {
-                .screen = screen,
-                .city_x = bases[i].x,
-                .city_y = FRAME_HEIGHT - 4,
+                .screen = game_screen,
                 .x = round(x),
                 .y = round(y)
             };
@@ -175,9 +180,6 @@ void checkHitPlayer(WINDOW *screen, float x, float y) {
 }
 
 void *genHostileMissiles(void *arguments) {
-    int cities_x_pos[6] = {15, 30, 45, 70, 85, 100};
-    int base_x_pos[3] = {6, 60, 117};
-
     int rand_target_type;
     int rand_target_x, rand_target_y;
     float dist;
@@ -188,7 +190,7 @@ void *genHostileMissiles(void *arguments) {
             rand_target_x = cities_x_pos[rand() % 6] + rand() % 6;
             rand_target_y = 36;
         } else {
-            rand_target_x = base_x_pos[rand() % 3];
+            rand_target_x = bases_x_pos[rand() % 3] + rand() % 6 + 2;
             rand_target_y = 33;
         }
         update_missile_thread_hostile_missiles[i] = (struct missile) {
@@ -224,8 +226,8 @@ void *updateHostileMissiles(void *arguments) {
                 if (update_missile_thread_hostile_missiles[i].live) {
                     if (fabsf(update_missile_thread_hostile_missiles[i].x - update_missile_thread_hostile_missiles[i].tar_x) < 1 && fabsf(update_missile_thread_hostile_missiles[i].y - update_missile_thread_hostile_missiles[i].tar_y) < 1) {
                         update_missile_thread_hostile_missiles[i].live = 0;
-                        checkHitPlayer(game_screen, update_missile_thread_hostile_missiles[i].x, update_missile_thread_hostile_missiles[i].y);
-                        killMissile(game_screen, &update_missile_thread_hostile_missiles[i]);
+                        checkHitPlayer(update_missile_thread_hostile_missiles[i].x, update_missile_thread_hostile_missiles[i].y);
+                        killMissile(&update_missile_thread_hostile_missiles[i]);
                     } else {
                         update_missile_thread_hostile_missiles[i].old_x = update_missile_thread_hostile_missiles[i].x;
                         update_missile_thread_hostile_missiles[i].old_y = update_missile_thread_hostile_missiles[i].y;
@@ -252,8 +254,8 @@ void *updateHostileMissiles(void *arguments) {
             if (update_missile_thread_player_missiles[i].live) {
                 if (fabsf(update_missile_thread_player_missiles[i].x - update_missile_thread_player_missiles[i].tar_x) < 1 && fabsf(update_missile_thread_player_missiles[i].y - update_missile_thread_player_missiles[i].tar_y) < 1) {
                     update_missile_thread_player_missiles[i].live = 0;
-                    checkHitPlayer(game_screen, update_missile_thread_player_missiles[i].x, update_missile_thread_player_missiles[i].y);
-                    killMissile(game_screen, &update_missile_thread_player_missiles[i]);
+                    checkHitPlayer(update_missile_thread_player_missiles[i].x, update_missile_thread_player_missiles[i].y);
+                    killMissile(&update_missile_thread_player_missiles[i]);
                 }
 
                 update_missile_thread_player_missiles[i].old_x = update_missile_thread_player_missiles[i].x;
@@ -353,22 +355,11 @@ void game() {
     wattron(main_screen, A_BOLD);
     keypad(main_screen, TRUE);
     noecho();
-    //nodelay(main_screen, TRUE);
     wmove(main_screen, 0, 0);
     werase(main_screen);
     erase();
 
-    wattron(main_screen, COLOR_PAIR(84));
-    drawFromFile(main_screen, 0, FRAME_HEIGHT - 6, "graphics/ground", ERASE);
-
-    int cities_x_pos[6] = {15, 30, 45, 70, 85, 100};
-
-    for (int i = 0; i < 6; i++) {
-        wattron(main_screen, COLOR_PAIR(3));
-        drawFromFile(main_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-1", DRAW);
-        wattron(main_screen, COLOR_PAIR(5));
-        drawFromFile(main_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-2", DRAW);
-    }
+    drawScreenSettings(main_screen, 0);
 
     wrefresh(main_screen);
 
@@ -377,10 +368,9 @@ void game() {
 
     game_screen = main_screen;
 
-    int base_x_pos[3] = {1, 56, 112};
     for (int i = 0; i < 3; i++) {
         bases[i] = (struct base) {
-            .x = base_x_pos[i],
+            .x = bases_x_pos[i],
             .y = FRAME_HEIGHT - 6,
             .missile_count = 15
         };

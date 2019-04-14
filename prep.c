@@ -56,15 +56,7 @@ void prep() {
     WINDOW *prep_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(prep_screen, A_BOLD);
     noecho();
-    wattron(prep_screen, COLOR_PAIR(84));
-    drawFromFile(prep_screen, 0, FRAME_HEIGHT - 6, "graphics/ground", ERASE);
-    int cities_x_pos[6] = {15, 30, 45, 70, 85, 100};
-    for (int i = 0; i < 6; i++) {
-        wattron(prep_screen, COLOR_PAIR(3));
-        drawFromFile(prep_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-1", DRAW);
-        wattron(prep_screen, COLOR_PAIR(5));
-        drawFromFile(prep_screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-2", DRAW);
-    }
+    drawScreenSettings(prep_screen, 0);
     wattron(prep_screen, COLOR_PAIR(5));
     drawFromFile(prep_screen, 18, FRAME_HEIGHT - 15, "graphics/defend-text", DRAW);
     drawFromFile(prep_screen, 72, FRAME_HEIGHT - 15, "graphics/cities-text", DRAW);

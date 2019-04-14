@@ -31,6 +31,7 @@ int main() {
     init_pair(7, COLOR_CYAN, COLOR_BLACK);
     init_pair(8, COLOR_WHITE, COLOR_BLACK);
 
+    init_pair(48, COLOR_YELLOW, COLOR_WHITE);
     init_pair(84, COLOR_WHITE, COLOR_YELLOW);
 
     start();

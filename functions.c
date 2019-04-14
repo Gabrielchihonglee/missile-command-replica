@@ -21,6 +21,8 @@ pthread_mutex_t lock;
 
 int start_explosion_pos[80][2];
 char *STAGE_1, *STAGE_2, *LARGE_STAGE_1, *LARGE_STAGE_2;
+int cities_x_pos[6] = {15, 30, 45, 70, 85, 100};
+int bases_x_pos[3] = {1, 56, 112};
 
 //enum drawMode {ERASE, DRAW};
 
@@ -148,4 +150,26 @@ void *carouselFromString(void *argument) {
         }
     }
     return NULL;
+}
+
+void drawScreenSettings(WINDOW *screen, int cities_only) {
+    pthread_mutex_lock(&lock);
+    if (!cities_only) {
+        wattron(screen, COLOR_PAIR(84));
+        drawFromFile(screen, 0, FRAME_HEIGHT - 3, "graphics/ground", ERASE);
+        for (int i = 0; i < 3; i++) {
+            wattron(screen, COLOR_PAIR(84));
+            drawFromFile(screen, bases_x_pos[i], FRAME_HEIGHT - 6, "graphics/base", ERASE);
+        }
+    }
+    for (int i = 0; i < 6; i++) {
+        if (cities_x_pos[i] == -1) {
+            continue;
+        }
+        wattron(screen, COLOR_PAIR(3));
+        drawFromFile(screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-1", DRAW);
+        wattron(screen, COLOR_PAIR(5));
+        drawFromFile(screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-2", DRAW);
+    }
+    pthread_mutex_unlock(&lock);
 }

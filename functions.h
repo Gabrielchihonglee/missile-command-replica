@@ -15,6 +15,8 @@ extern pthread_mutex_t lock;
 
 extern int start_explosion_pos[80][2];
 extern char *STAGE_1, *STAGE_2, *LARGE_STAGE_1, *LARGE_STAGE_2;
+extern int cities_x_pos[6];
+extern int bases_x_pos[3];
 
 enum drawMode {ERASE, DRAW};
 
@@ -33,5 +35,7 @@ void updateSmallExplosionStage(WINDOW *screen, int from_missile, int to_missile,
 void refreshHighScore(WINDOW *screen, int cur_score, int high_score);
 
 void *carouselFromString(void *argument);
+
+void drawScreenSettings(WINDOW *screen, int cities_only);
 
 #endif
