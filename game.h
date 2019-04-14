@@ -5,7 +5,7 @@
 
 enum missileType {PLAYER, HOSTILE_NORMAL, HOSTILE_CRAZY};
 
-void shootPlayerMissile(void *player_missiless, int tar_x, int tar_y, int base);
+void shootPlayerMissile(int tar_x, int tar_y, int base);
 
 void killMissile(void *missile_input);
 
