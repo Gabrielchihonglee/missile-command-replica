@@ -148,15 +148,15 @@ void checkHitPlayer(float x, float y) {
             mvwprintw(game_screen, FRAME_HEIGHT - 3, cities_x_pos[i], "       ");
             pthread_mutex_unlock(&lock);
             cities[i].survive = -1;
-            struct missileExplosionThreadArg *missile_explosion_args = malloc(sizeof(*missile_explosion_args));
-            *missile_explosion_args = (struct missileExplosionThreadArg) {
-                .screen = game_screen,
-                .x = round(x),
-                .y = round(y)
-            };
-            pthread_t missile_explosion_thread;
-            pthread_create(&missile_explosion_thread, NULL, updateMissileExplosion, missile_explosion_args);
         }
+        struct missileExplosionThreadArg *missile_explosion_args = malloc(sizeof(*missile_explosion_args));
+        *missile_explosion_args = (struct missileExplosionThreadArg) {
+            .screen = game_screen,
+            .x = round(x),
+            .y = round(y)
+        };
+        pthread_t missile_explosion_thread;
+        pthread_create(&missile_explosion_thread, NULL, updateMissileExplosion, missile_explosion_args);
     }
     for (int i = 0; i < 3; i++) {
         if ((x >= bases[i].x) && (x <= (bases[i].x + 7))) {
@@ -165,15 +165,15 @@ void checkHitPlayer(float x, float y) {
             drawFromFile(game_screen, bases[i].x, FRAME_HEIGHT - 6, "graphics/base", ERASE);
             pthread_mutex_unlock(&lock);
             updateMissileCount();
-            struct missileExplosionThreadArg *missile_explosion_args = malloc(sizeof(*missile_explosion_args));
-            *missile_explosion_args = (struct missileExplosionThreadArg) {
-                .screen = game_screen,
-                .x = round(x),
-                .y = round(y)
-            };
-            pthread_t missile_explosion_thread;
-            pthread_create(&missile_explosion_thread, NULL, updateMissileExplosion, missile_explosion_args);
         }
+        struct missileExplosionThreadArg *missile_explosion_args = malloc(sizeof(*missile_explosion_args));
+        *missile_explosion_args = (struct missileExplosionThreadArg) {
+            .screen = game_screen,
+            .x = round(x),
+            .y = round(y)
+        };
+        pthread_t missile_explosion_thread;
+        pthread_create(&missile_explosion_thread, NULL, updateMissileExplosion, missile_explosion_args);
     }
 }
 
@@ -181,16 +181,16 @@ void checkHitHostile(float x, float y) {
     for (int i = 0; i < 10; i++) {
         if (hostile_missiles[i].live && fabsf(x - hostile_missiles[i].x) < 5 && fabsf(y - hostile_missiles[i].y) < 5) {
             killMissile(&hostile_missiles[i]);
-            struct missileExplosionThreadArg *missile_explosion_args = malloc(sizeof(*missile_explosion_args));
-            *missile_explosion_args = (struct missileExplosionThreadArg) {
-                .screen = game_screen,
-                .x = round(x),
-                .y = round(y)
-            };
-            pthread_t missile_explosion_thread;
-            pthread_create(&missile_explosion_thread, NULL, updateMissileExplosion, missile_explosion_args);
             score += 25;
         }
+        struct missileExplosionThreadArg *missile_explosion_args = malloc(sizeof(*missile_explosion_args));
+        *missile_explosion_args = (struct missileExplosionThreadArg) {
+            .screen = game_screen,
+            .x = round(x),
+            .y = round(y)
+        };
+        pthread_t missile_explosion_thread;
+        pthread_create(&missile_explosion_thread, NULL, updateMissileExplosion, missile_explosion_args);
     }
 }
 
