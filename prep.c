@@ -61,9 +61,7 @@ void prep() {
     drawFromFile(prep_screen, 18, FRAME_HEIGHT - 15, "graphics/defend-text", DRAW);
     drawFromFile(prep_screen, 72, FRAME_HEIGHT - 15, "graphics/cities-text", DRAW);
 
-    int cur_score = 20;
-    int high_score = 0;
-    refreshHighScore(prep_screen, cur_score, high_score);
+    refreshHighScore(prep_screen);
 
     wattron(prep_screen, COLOR_PAIR(2));
     char prep_screen_arrow_string[FRAME_WIDTH - 1];

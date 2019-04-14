@@ -55,6 +55,10 @@ void shootPlayerMissile(void *player_missiless, int tar_x, int tar_y, int base) 
         updateMissileCount();
         return;
     }
+    pthread_mutex_lock(&lock);
+    wattron(game_screen, COLOR_PAIR(8));
+    mvwaddch(game_screen, tar_y, tar_x, 'x');
+    pthread_mutex_unlock(&lock);
     struct missile *player_missiles = player_missiless;
     float dist;
     struct missile player_missile = {
@@ -105,9 +109,10 @@ void killMissile(void *missile_input) {
     struct missile *missile = missile_input;
     pthread_mutex_lock(&lock);
     wattron(game_screen, COLOR_PAIR(1));
+    mvwaddch(game_screen, missile->tar_y, missile->tar_x, ' ');
     while (1) {
         mvwaddch(game_screen, round(missile->y), round(missile->x), ' ');
-        if (fabsf(missile->x - missile->start_x) < 0.00001 && fabsf(missile->y - missile->start_y) < 0.00001) {
+        if (fabsf(missile->x - missile->start_x) < 0.1 && fabsf(missile->y - missile->start_y) < 0.1) {
             break;
         }
         missile->x -= missile->vel_x;
@@ -118,21 +123,15 @@ void killMissile(void *missile_input) {
 
 void *updateMissileExplosion(void *arguments) {
     struct missileExplosionThreadArg *args = arguments;
-
     usleep(10000);
-
     pthread_mutex_lock(&lock);
     drawFromString(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_1, DRAW);
     pthread_mutex_unlock(&lock);
-
     usleep(100000);
-
     pthread_mutex_lock(&lock);
     drawFromString(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_2, DRAW);
     pthread_mutex_unlock(&lock);
-
     usleep(100000);
-
     pthread_mutex_lock(&lock);
     drawFromString(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_2, ERASE);
     pthread_mutex_unlock(&lock);
@@ -191,6 +190,7 @@ void checkHitHostile(float x, float y) {
             };
             pthread_t missile_explosion_thread;
             pthread_create(&missile_explosion_thread, NULL, updateMissileExplosion, missile_explosion_args);
+            score += 25;
         }
     }
 }
@@ -301,42 +301,46 @@ void *updateMissiles(void *arguments) {
 void *inputListener(void *arguments) {
     mousemask(ALL_MOUSE_EVENTS, NULL);
     int input;
-    int cur_x = 30;
-    int cur_y = 10;
-    wattron(game_screen, COLOR_PAIR(8));
-    mvwaddch(game_screen, cur_y, cur_x, ACS_PLUS);
-        MEVENT event;
+    int cur_x = FRAME_WIDTH / 2;
+    int cur_y = (FRAME_HEIGHT - 7) / 2;
+    wattron(game_screen, COLOR_PAIR(5));
+    mvwaddch(game_screen, cur_y, cur_x, '+');
+    MEVENT event;
     while (main_loop_run) {
         input = wgetch(game_screen);
         switch (input) {
             case KEY_MOUSE:
                 if (getmouse(&event) == OK) {
-                    pthread_mutex_lock(&lock);
-                    wattron(game_screen, COLOR_PAIR(8));
-                    mvwaddch(game_screen, cur_y, cur_x, ' ');
-                    cur_x = event.x;
-                    cur_y = event.y;
-                    mvwaddch(game_screen, cur_y, cur_x, ACS_PLUS);
-                    pthread_mutex_unlock(&lock);
+                    if (event.x < FRAME_WIDTH && event.y < (FRAME_HEIGHT - 7)) {
+                        pthread_mutex_lock(&lock);
+                        wattron(game_screen, COLOR_PAIR(5));
+                        if ((mvwinch(game_screen, cur_y, cur_x) & A_CHARTEXT) != ('x' & A_CHARTEXT)) {
+                            mvwaddch(game_screen, cur_y, cur_x, ' ');
+                        }
+                        cur_x = event.x;
+                        cur_y = event.y;
+                        mvwaddch(game_screen, cur_y, cur_x, '+');
+                        pthread_mutex_unlock(&lock);
+                    }
                   }
                 break;
             case KEY_LEFT:
                 pthread_mutex_lock(&lock);
                 if (cur_x > 0) {
-                    wattron(game_screen, COLOR_PAIR(8));
+                    wattron(game_screen, COLOR_PAIR(5));
                     mvwaddch(game_screen, cur_y, cur_x, ' ');
                     cur_x -= 1;
-                    mvwaddch(game_screen, cur_y, cur_x, ACS_PLUS);
+                    mvwaddch(game_screen, cur_y, cur_x, '+');
                 }
                 pthread_mutex_unlock(&lock);
                 break;
             case KEY_RIGHT:
                 pthread_mutex_lock(&lock);
                 if (cur_x < FRAME_WIDTH - 1) {
-                    wattron(game_screen, COLOR_PAIR(8));
+                    wattron(game_screen, COLOR_PAIR(5));
                     mvwaddch(game_screen, cur_y, cur_x, ' ');
                     cur_x += 1;
-                    mvwaddch(game_screen, cur_y, cur_x, ACS_PLUS);
+                    mvwaddch(game_screen, cur_y, cur_x, '+');
                 }
                 pthread_mutex_unlock(&lock);
                 break;
@@ -389,11 +393,7 @@ void game() {
     erase();
 
     drawScreenSettings(main_screen, 0);
-
     wrefresh(main_screen);
-
-    //struct missile hostile_missiles[10] = {0};
-    //struct missile player_missiles[30] = {0};
 
     game_screen = main_screen;
 
@@ -401,9 +401,8 @@ void game() {
         bases[i] = (struct base) {
             .x = bases_x_pos[i],
             .y = FRAME_HEIGHT - 6,
-            .missile_count = 15
+            .missile_count = 10
         };
-        //mvwaddch(main_screen, bases[i].y, bases[i].x, 'X');
     }
     updateMissileCount();
 
@@ -423,6 +422,7 @@ void game() {
         usleep(10000);
         pthread_mutex_lock(&lock);
         wrefresh(main_screen);
+        refreshHighScore(main_screen);
         pthread_mutex_unlock(&lock);
     }
 }

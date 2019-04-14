@@ -26,13 +26,16 @@ extern int carousel_thread_start_x, carousel_thread_end_x, carousel_thread_y;
 extern char *carousel_thread_text;
 extern int carousel_thread_color_pair;
 
+extern int score;
+extern int high_score;
+
 void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], enum drawMode mode);
 
 void drawFromString(WINDOW *screen, int start_x, int start_y, char *line, enum drawMode mode);
 
 void updateSmallExplosionStage(WINDOW *screen, int from_missile, int to_missile, int color);
 
-void refreshHighScore(WINDOW *screen, int cur_score, int high_score);
+void refreshHighScore(WINDOW *screen);
 
 void *carouselFromString(void *argument);
 

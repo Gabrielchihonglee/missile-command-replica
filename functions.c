@@ -32,6 +32,9 @@ int carousel_thread_start_x, carousel_thread_end_x, carousel_thread_y;
 char *carousel_thread_text;
 int carousel_thread_color_pair;
 
+int score = 0;
+int high_score = 0;
+
 void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], enum drawMode mode) { // mode 1: draw 0: erase/draw with backgound
     FILE *fp = fopen(file, "r");
     char symbol;
@@ -115,14 +118,31 @@ void updateSmallExplosionStage(WINDOW *screen, int from_missile, int to_missile,
     usleep(1000);
 }
 
-void refreshHighScore(WINDOW *screen, int cur_score, int high_score) {
-    char cur_score_text[10];
+/**
+SCORE CALCULATION METHOD:
+Base Scores:
+    Missile: 25
+    Crazy Missile: 125
+    UFO / Fighter: 100
+    Unused missile: 5/missile
+    Unused city: 100/cities
+Score Multiplier:
+    Wave 1/2: 1x
+    Wave 3/4: 2x
+    Wave 5/6: 3x
+    Wave 7/8: 4x
+    Wave 8/9: 5x
+    Wave 11+: 6x
+**/
+
+void refreshHighScore(WINDOW *screen) {
+    char score_text[10];
     char high_score_text[10];
-    sprintf(cur_score_text, "%i", cur_score);
+    sprintf(score_text, "%i", score);
     sprintf(high_score_text, "%i", high_score);
     wattron(screen, COLOR_PAIR(2));
-    mvwprintw(screen, 0, FRAME_WIDTH / 2, cur_score_text);
-    mvwprintw(screen, 0, FRAME_WIDTH / 2 - 15, cur_score_text);
+    mvwprintw(screen, 0, FRAME_WIDTH / 2, high_score_text);
+    mvwprintw(screen, 0, FRAME_WIDTH / 2 - 15, score_text);
 }
 
 void *carouselFromString(void *argument) {
