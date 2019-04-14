@@ -107,6 +107,7 @@ void updateMissileCount() {
 void killMissile(void *missile_input) {
     struct missile *missile = missile_input;
     pthread_mutex_lock(&lock);
+    missile->live = 0;
     wattron(game_screen, COLOR_PAIR(1));
     mvwaddch(game_screen, missile->tar_y, missile->tar_x, ' ');
     while (1) {
@@ -240,7 +241,6 @@ void *updateMissiles(void *arguments) {
             for (int i = 0; i < 10; i++) {
                 if (hostile_missiles[i].live) {
                     if (fabsf(hostile_missiles[i].x - hostile_missiles[i].tar_x) < 1 && fabsf(hostile_missiles[i].y - hostile_missiles[i].tar_y) < 1) {
-                        hostile_missiles[i].live = 0;
                         checkHitPlayer(hostile_missiles[i].x, hostile_missiles[i].y);
                         killMissile(&hostile_missiles[i]);
                     } else {
@@ -268,7 +268,6 @@ void *updateMissiles(void *arguments) {
         for (int i = 0; i < 30; i++) {
             if (player_missiles[i].live) {
                 if (fabsf(player_missiles[i].x - player_missiles[i].tar_x) < 1 && fabsf(player_missiles[i].y - player_missiles[i].tar_y) < 1) {
-                    player_missiles[i].live = 0;
                     checkHitHostile(player_missiles[i].x, player_missiles[i].y);
                     killMissile(&player_missiles[i]);
                 }
