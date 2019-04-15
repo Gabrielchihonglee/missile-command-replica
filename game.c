@@ -188,8 +188,10 @@ void *genHostileMissiles(void *arguments) {
     int rand_target_type;
     int rand_target_x, rand_target_y;
     float dist;
-    for (int i = 0; i < 10; i++) {
-        usleep(1000000);
+    for (int i = 0; i < 8; i++) {
+        if (i == 4) {
+            usleep(5000000);
+        }
         rand_target_type = rand() % 2 - 1;
         if (rand_target_type) {
             rand_target_x = cities_x_pos[rand() % 6] + rand() % 6;
@@ -348,19 +350,17 @@ void *inputListener(void *arguments) {
 }
 
 void game() {
-    WINDOW *main_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
+    game_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     game_live = 1;
-    wattron(main_screen, A_BOLD);
-    keypad(main_screen, TRUE);
+    wattron(game_screen, A_BOLD);
+    keypad(game_screen, TRUE);
     noecho();
-    wmove(main_screen, 0, 0);
-    werase(main_screen);
-    erase();
+    //wmove(main_screen, 0, 0);
+    //werase(main_screen);
+    //erase();
 
-    drawScreenSettings(main_screen, 0);
-    wrefresh(main_screen);
-
-    game_screen = main_screen;
+    drawScreenSettings(game_screen, 0);
+    wrefresh(game_screen);
 
     for (int i = 0; i < 3; i++) {
         bases[i] = (struct base) {
@@ -372,10 +372,10 @@ void game() {
     updateMissileCount();
 
     pthread_t update_missiles_thread;
-    pthread_create(&update_missiles_thread, NULL, updateMissiles, NULL);
+    //pthread_create(&update_missiles_thread, NULL, updateMissiles, NULL);
 
     pthread_t gen_hostile_missiles_thread;
-    pthread_create(&gen_hostile_missiles_thread, NULL, genHostileMissiles, NULL);
+    //pthread_create(&gen_hostile_missiles_thread, NULL, genHostileMissiles, NULL);
 
     pthread_t input_listener_thread;
     pthread_create(&input_listener_thread, NULL, inputListener, NULL);
@@ -383,8 +383,8 @@ void game() {
     while (game_live) {
         usleep(10000);
         pthread_mutex_lock(&lock);
-        wrefresh(main_screen);
-        refreshHighScore(main_screen);
+        wrefresh(game_screen);
+        refreshHighScore(game_screen);
         pthread_mutex_unlock(&lock);
     }
 }
