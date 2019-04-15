@@ -217,11 +217,15 @@ void *genHostileMissiles(void *arguments) {
     return NULL;
 }
 
-void subUpdateMissiles(struct missile *missiles) {
-    for (int i = 0; i < (sizeof(*missiles) / sizeof(struct missile)); i++) {
+void subUpdateMissiles(struct missile *missiles, int missile_count) {
+    for (int i = 0; i < missile_count; i++) {
         if (missiles[i].live) {
             if (fabsf(missiles[i].x - missiles[i].tar_x) < 1 && fabsf(missiles[i].y - missiles[i].tar_y) < 1) {
-                checkHitPlayer(missiles[i].x, missiles[i].y);
+                if (missiles[i].type == PLAYER) {
+                    checkHitHostile(missiles[i].x, missiles[i].y);
+                } else {
+                    checkHitPlayer(missiles[i].x, missiles[i].y);
+                }
                 killMissile(&missiles[i]);
             } else {
                 missiles[i].old_x = missiles[i].x;
@@ -234,7 +238,7 @@ void subUpdateMissiles(struct missile *missiles) {
                     if (round(missiles[i].vel_x) > 0) {
                         mvwaddch(game_screen, round(missiles[i].old_y), round(missiles[i].old_x), '/');
                     }
-                    else if (round(missiles[i].vel_x) < 0) {
+                    else if (round(player_missiles[i].vel_x) < 0) {
                         mvwaddch(game_screen, round(missiles[i].old_y), round(missiles[i].old_x), '\\');
                     } else {
                         mvwaddch(game_screen, round(missiles[i].old_y), round(missiles[i].old_x), '|');
@@ -268,9 +272,9 @@ void *updateMissiles(void *arguments) {
             counter = 0;
         }
         if (!counter) {
-            subUpdateMissiles(hostile_missiles);
+            subUpdateMissiles(hostile_missiles, 10);
         }
-        subUpdateMissiles(player_missiles);
+        subUpdateMissiles(player_missiles, 30);
     }
     return NULL;
 }
