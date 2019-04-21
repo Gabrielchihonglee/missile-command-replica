@@ -383,8 +383,8 @@ void game() {
     while (game_live) {
         usleep(10000);
         pthread_mutex_lock(&lock);
-        wrefresh(game_screen);
-        refreshHighScore(game_screen);
+        //wrefresh(game_screen);
+        //refreshHighScore(game_screen);
         pthread_mutex_unlock(&lock);
     }
 }

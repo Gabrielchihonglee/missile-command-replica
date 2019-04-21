@@ -127,12 +127,13 @@ Base Scores:
     Unused missile: 5/missile
     Unused city: 100/cities
 Score Multiplier:
-    Wave 1/2: 1x
-    Wave 3/4: 2x
-    Wave 5/6: 3x
-    Wave 7/8: 4x
-    Wave 8/9: 5x
-    Wave 11+: 6x
+    Level 1/2: 1x
+    Level 3/4: 2x
+    Level 5/6: 3x
+    Level 7/8: 4x
+    Level 8/9: 5x
+    Level 11+: 6x
+Info from: https://strategywiki.org/wiki/Missile_Command/Walkthrough
 **/
 
 void refreshHighScore(WINDOW *screen) {
