@@ -6,7 +6,7 @@
 #include <ucontext.h>
 #include <stdlib.h>
 
-enum thread_state {STATE_RUN, STATE_SLEEP, STATE_END, STATE_I_AM_SPECIAL};
+enum thread_state {STATE_RUNNING, STATE_IDLE, STATE_END};
 
 struct thread {
     int id;

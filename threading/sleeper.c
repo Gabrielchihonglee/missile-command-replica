@@ -16,11 +16,16 @@ int sleep_sort(void *a, void *b) {
 }
 
 void sleep_add(struct thread *thread, struct timespec wakeup) {
-    struct sleeping_thread sleeping_thread = {
+    struct sleeping_thread *sleeping_thread = malloc(sizeof(*sleeping_thread));
+    *sleeping_thread = (struct sleeping_thread){
         .thread = thread,
         .wakeup = wakeup
     };
-    push_item_order(&sleeping_threads, &sleeping_thread, &sleep_sort);
+    push_item_order(&sleeping_threads, sleeping_thread, &sleep_sort);
+
+    thread->state = STATE_IDLE;
+    schedule();
+    thread->state = STATE_RUNNING;
 }
 
 void sleep_wait() {

@@ -27,7 +27,7 @@ struct thread *thread_create(void (*fn)(void *param), void *param, int id) {
     struct thread *thread = malloc(sizeof(*thread));
     *thread = (struct thread) {
         .id = id,
-        .state = STATE_RUN
+        .state = STATE_RUNNING
     };
     getcontext(&thread->context);
     thread->context.uc_stack = stack_struct;
