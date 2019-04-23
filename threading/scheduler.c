@@ -1,25 +1,35 @@
-#include "../list.h"
+#include "list.h"
+#include "thread.h"
+#include "sleeper.h"
 #include "scheduler.h"
 
 #include <ucontext.h>
 #include <stdlib.h>
 
 static struct list_item *thread_queue;
+struct thread *current_thread;
 
-void sched_wakeup(struct thread *thread) { // add thread to queue
-    struct list_item *thread_item = malloc(sizeof(*thread_item));
-    *thread_item = (struct list_item){
-        .content = thread,
-        .next = NULL,
+void sched_init() {
+    struct thread *main_thread = malloc(sizeof(*main_thread));
+    *main_thread = (struct thread) {
+        .state = STATE_RUN
     };
-    push_item_back(&thread_queue, thread_item);
+    current_thread = main_thread;
 }
 
-void schedule() { // switch to the first thread in queue (pop off the first thread from the queue and schedule it)
-    // TODO: call wait
-    if (!thread_queue) {
-        return;
+void sched_wakeup(struct thread *thread) {
+    if (thread != current_thread && !list_contains(&thread_queue, thread))
+        push_item_back(&thread_queue, thread);
+}
+
+void schedule() {
+    if (current_thread->state == STATE_RUN)
+        push_item_back(&thread_queue, current_thread);
+    while (!thread_queue)
+        sleep_wait();
+    if ((struct thread *)thread_queue->content != current_thread) {
+        struct thread *debug = pop_item_front(&thread_queue);
+        swapcontext(&current_thread->context, &debug->context);
     }
     // TODO: Fix memory leak
-    swapcontext(&main_context, ((struct thread *)pop_item_front(&thread_queue)->content)->context);
 }
