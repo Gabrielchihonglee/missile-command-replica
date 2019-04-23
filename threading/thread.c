@@ -14,7 +14,7 @@ void thread_wrapper(void (*fn)(void *param), void *param) {
     schedule();
 }
 
-struct thread *thread_create(void (*fn)(void *param), void *param) {
+struct thread *thread_create(void (*fn)(void *param), void *param, int id) {
     void *stack = mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if (stack == MAP_FAILED) {
         perror("mmap");
@@ -26,6 +26,7 @@ struct thread *thread_create(void (*fn)(void *param), void *param) {
     };
     struct thread *thread = malloc(sizeof(*thread));
     *thread = (struct thread) {
+        .id = id,
         .state = STATE_RUN
     };
     getcontext(&thread->context);

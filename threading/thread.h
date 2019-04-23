@@ -6,9 +6,10 @@
 #include <ucontext.h>
 #include <stdlib.h>
 
-enum thread_state {STATE_RUN, STATE_SLEEP, STATE_END};
+enum thread_state {STATE_RUN, STATE_SLEEP, STATE_END, STATE_I_AM_SPECIAL};
 
 struct thread {
+    int id;
     ucontext_t context;
     enum thread_state state;
 };
@@ -16,7 +17,7 @@ struct thread {
 /**
 *
 */
-struct thread *thread_create(void (*fn)(void *param), void *param);
+struct thread *thread_create(void (*fn)(void *param), void *param, int id);
 
 /**
 *

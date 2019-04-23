@@ -12,7 +12,8 @@ struct thread *current_thread;
 void sched_init() {
     struct thread *main_thread = malloc(sizeof(*main_thread));
     *main_thread = (struct thread) {
-        .state = STATE_RUN
+        .id = 1,
+        .state = STATE_I_AM_SPECIAL
     };
     current_thread = main_thread;
 }
@@ -31,5 +32,4 @@ void schedule() {
         struct thread *debug = pop_item_front(&thread_queue);
         swapcontext(&current_thread->context, &debug->context);
     }
-    // TODO: Fix memory leak
 }
