@@ -26,13 +26,13 @@ void print_3(void *param) { // demo function
 int main() {
     sched_init();
 
-    struct thread thread_1 = thread_create(&print_1, NULL);
-    struct thread thread_2 = thread_create(&print_2, NULL);
-    struct thread thread_3 = thread_create(&print_3, NULL);
+    struct thread *thread_1 = thread_create(&print_1, NULL);
+    struct thread *thread_2 = thread_create(&print_2, NULL);
+    struct thread *thread_3 = thread_create(&print_3, NULL);
 
-    sched_wakeup(&thread_1);
-    sched_wakeup(&thread_2);
-    sched_wakeup(&thread_3);
+    sched_wakeup(thread_1);
+    sched_wakeup(thread_2);
+    sched_wakeup(thread_3);
 
     schedule();
 
