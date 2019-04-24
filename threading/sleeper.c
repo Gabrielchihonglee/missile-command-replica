@@ -59,7 +59,7 @@ void sleep_wait() {
             (wakeup_time.tv_sec < spec.tv_sec || (wakeup_time.tv_sec == spec.tv_sec && wakeup_time.tv_nsec <= spec.tv_nsec)))
         )  {
             struct sleeping_thread *item = pop_item_front(&sleeping_threads);
-            sched_wakeup_no_check(item->thread);
+            sched_wakeup(item->thread);
             free(item);
         }
     }

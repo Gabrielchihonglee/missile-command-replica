@@ -22,4 +22,6 @@ void sleep_add(int nsec);
 */
 void sleep_wait();
 
+void swapper();
+
 #endif

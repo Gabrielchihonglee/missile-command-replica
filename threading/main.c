@@ -38,7 +38,10 @@ int main() {
     sched_wakeup(thread_2);
     sched_wakeup(thread_3);
 
-    schedule();
+    while(1) {
+        schedule();
+        sleep_wait();
+    }
 
     printf("END!!!\n");
 

@@ -8,9 +8,10 @@
 
 static struct list_item *thread_queue;
 struct thread *current_thread;
+struct thread *main_thread;
 
 void sched_init() {
-    struct thread *main_thread = malloc(sizeof(*main_thread));
+    main_thread = malloc(sizeof(*main_thread));
     *main_thread = (struct thread) {
         .state = STATE_IDLE
     };
@@ -30,7 +31,7 @@ void schedule() {
     if (current_thread->state == STATE_RUNNING)
         push_item_back(&thread_queue, current_thread);
     while (!thread_queue)
-        sleep_wait();
+        swapcontext(&current_thread->context, &main_thread->context);
     if ((struct thread *)thread_queue->content != current_thread) {
         struct thread *prev_thread = current_thread;
         current_thread = thread_queue->content;
