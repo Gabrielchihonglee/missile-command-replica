@@ -19,7 +19,7 @@ void push_item_back(struct list_item **list, void *content) {
 }
 
 void push_item_order(struct list_item **list, void *content, int (*sort)(void *x, void *y)) {
-    while (*list && (*sort)((*list)->content, content) > 0)
+    while (*list && (*sort)((*list)->content, content) < 0)
         list = &(*list)->next;
     push_item_front(list, content);
 }

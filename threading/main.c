@@ -41,8 +41,8 @@ int main() {
     struct thread *thread_2 = thread_create(&print_2, NULL);
     sched_wakeup(thread_2);
 
-    //struct thread *thread_3 = thread_create(&print_3, NULL);
-    //sched_wakeup(thread_3);
+    struct thread *thread_3 = thread_create(&print_3, NULL);
+    sched_wakeup(thread_3);
 
     while(1) {
         schedule();
