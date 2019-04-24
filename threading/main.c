@@ -12,7 +12,10 @@
 #include <unistd.h>
 
 void print_1(void *param) { // demo function
-    printf("1\n");
+    while(1) {
+        printf("1\n");
+        sleep_add(1000);
+    }
 }
 
 void print_2(void *param) { // demo function
@@ -26,11 +29,8 @@ void print_3(void *param) { // demo function
 int main() {
     sched_init();
 
-    struct timespec wakeup;
-    clock_gettime(CLOCK_REALTIME, &wakeup);
-    wakeup.tv_sec += 1;
     struct thread *thread_1 = thread_create(&print_1, NULL, 11);
-    sleep_add(thread_1, wakeup);
+    sched_wakeup(thread_1);
 
     struct thread *thread_2 = thread_create(&print_2, NULL, 12);
     struct thread *thread_3 = thread_create(&print_3, NULL, 13);

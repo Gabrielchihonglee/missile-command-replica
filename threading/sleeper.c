@@ -15,17 +15,24 @@ int sleep_sort(void *a, void *b) {
     return (long)a_time.tv_sec - b_time.tv_sec;
 }
 
-void sleep_add(struct thread *thread, struct timespec wakeup) {
+void sleep_add(int nsec) {
+    struct timespec wakeup;
+    clock_gettime(CLOCK_REALTIME, &wakeup);
+    wakeup.tv_nsec += nsec;
+    if (wakeup.tv_nsec > 999999999) {
+        wakeup.tv_nsec -= 1000000000;
+        wakeup.tv_sec += 1;
+    }
     struct sleeping_thread *sleeping_thread = malloc(sizeof(*sleeping_thread));
     *sleeping_thread = (struct sleeping_thread){
-        .thread = thread,
+        .thread = current_thread,
         .wakeup = wakeup
     };
     push_item_order(&sleeping_threads, sleeping_thread, &sleep_sort);
 
-    thread->state = STATE_IDLE;
+    current_thread->state = STATE_IDLE;
     schedule();
-    thread->state = STATE_RUNNING;
+    current_thread->state = STATE_RUNNING;
 }
 
 void sleep_wait() {

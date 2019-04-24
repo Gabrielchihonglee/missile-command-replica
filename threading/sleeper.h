@@ -14,7 +14,7 @@ struct sleeping_thread {
 /**
 * Adds sleeping_thread to the sleeping_threads list, ordered by wakeup time.
 */
-void sleep_add(struct thread *thread, struct timespec wakeup);
+void sleep_add(int nsec);
 
 /**
 * Checks if the first sleeping_thread should wake up, if so, calls sched_wakeup,
