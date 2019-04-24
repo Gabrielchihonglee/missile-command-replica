@@ -17,9 +17,13 @@ void sched_init() {
     current_thread = main_thread;
 }
 
+void sched_wakeup_no_check(struct thread *thread) {
+    push_item_back(&thread_queue, thread);
+}
+
 void sched_wakeup(struct thread *thread) {
     if (thread != current_thread && !list_contains(&thread_queue, thread))
-        push_item_back(&thread_queue, thread);
+        sched_wakeup_no_check(thread);
 }
 
 void schedule() {

@@ -13,6 +13,8 @@ struct thread;
 
 void sched_init();
 
+void sched_wakeup_no_check(struct thread *thread);
+
 /**
 * Adds the thread to the queue.
 */
