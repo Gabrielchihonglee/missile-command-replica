@@ -27,14 +27,19 @@ void sched_wakeup(struct thread *thread) {
         sched_wakeup_no_check(thread);
 }
 
+void swap_to(struct thread *thread) {
+    if (thread == current_thread)
+        return;
+    struct thread *prev = current_thread;
+    current_thread = thread;
+    swapcontext(&prev->context, &current_thread->context);
+}
+
 void schedule() {
-    if (current_thread->state == STATE_RUNNING)
+    if (current_thread != main_thread && current_thread->state == STATE_RUNNING)
         push_item_back(&thread_queue, current_thread);
-    while (!thread_queue)
-        swapcontext(&current_thread->context, &main_thread->context);
-    if ((struct thread *)thread_queue->content != current_thread) {
-        struct thread *prev_thread = current_thread;
-        current_thread = thread_queue->content;
-        swapcontext(&prev_thread->context, &((struct thread *)pop_item_front(&thread_queue))->context);
-    }
+    if (!thread_queue)
+        swap_to(main_thread);
+    else
+        swap_to(pop_item_front(&thread_queue));
 }
