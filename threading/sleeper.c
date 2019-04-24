@@ -56,6 +56,4 @@ void sleep_wait() {
             free(item);
         }
     }
-    // sleep forever till interrupt
-    schedule();
 }
