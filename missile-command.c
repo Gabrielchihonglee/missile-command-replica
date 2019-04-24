@@ -7,7 +7,6 @@
 #include <time.h>
 #include <pthread.h>
 
-#include "scheduler.h"
 #include "functions.h"
 #include "start.h"
 #include "prep.h"

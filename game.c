@@ -294,7 +294,7 @@ void moveCursor(int *cur_x, int *cur_y, int new_x, int new_y) {
 }
 
 void *inputListener(void *arguments) {
-    mousemask(ALL_MOUSE_EVENTS, NULL);
+    //mousemask(ALL_MOUSE_EVENTS, NULL);
     int input;
     int cur_x = FRAME_WIDTH / 2;
     int cur_y = (FRAME_HEIGHT - 7) / 2;
@@ -304,7 +304,7 @@ void *inputListener(void *arguments) {
     while (game_live) {
         input = wgetch(game_screen);
         switch (input) {
-            case KEY_MOUSE:
+            /**case KEY_MOUSE:
                 if (getmouse(&event) == OK) {
                     if (event.x < FRAME_WIDTH && event.y < (FRAME_HEIGHT - 7)) {
                         moveCursor(&cur_x, &cur_y, event.x, event.y);
@@ -339,7 +339,7 @@ void *inputListener(void *arguments) {
                 break;
             case '3':
                 shootPlayerMissile(cur_x, cur_y, 2);
-                break;
+                break;**/
             case 'q':
                 game_live = 0;
                 endwin();
@@ -372,10 +372,10 @@ void game() {
     updateMissileCount();
 
     pthread_t update_missiles_thread;
-    //pthread_create(&update_missiles_thread, NULL, updateMissiles, NULL);
+    pthread_create(&update_missiles_thread, NULL, updateMissiles, NULL);
 
     pthread_t gen_hostile_missiles_thread;
-    //pthread_create(&gen_hostile_missiles_thread, NULL, genHostileMissiles, NULL);
+    pthread_create(&gen_hostile_missiles_thread, NULL, genHostileMissiles, NULL);
 
     pthread_t input_listener_thread;
     pthread_create(&input_listener_thread, NULL, inputListener, NULL);
@@ -383,7 +383,7 @@ void game() {
     while (game_live) {
         usleep(10000);
         pthread_mutex_lock(&lock);
-        //wrefresh(game_screen);
+        wrefresh(game_screen);
         //refreshHighScore(game_screen);
         pthread_mutex_unlock(&lock);
     }
