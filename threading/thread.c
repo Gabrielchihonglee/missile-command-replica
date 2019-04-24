@@ -8,13 +8,19 @@
 
 #define STACK_SIZE 1048576
 
+unsigned int gen_thread_id() {
+    static unsigned int id = 0;
+    id++;
+    return id;
+}
+
 void thread_wrapper(void (*fn)(void *param), void *param) {
     (*fn)(param);
     current_thread->state = STATE_END;
     schedule();
 }
 
-struct thread *thread_create(void (*fn)(void *param), void *param, int id) {
+struct thread *thread_create(void (*fn)(void *param), void *param) {
     void *stack = mmap(NULL, STACK_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if (stack == MAP_FAILED) {
         perror("mmap");
@@ -26,7 +32,7 @@ struct thread *thread_create(void (*fn)(void *param), void *param, int id) {
     };
     struct thread *thread = malloc(sizeof(*thread));
     *thread = (struct thread) {
-        .id = id,
+        .id = gen_thread_id(),
         .state = STATE_RUNNING
     };
     getcontext(&thread->context);

@@ -9,7 +9,7 @@
 enum thread_state {STATE_RUNNING, STATE_IDLE, STATE_END};
 
 struct thread {
-    int id;
+    unsigned int id;
     ucontext_t context;
     enum thread_state state;
 };
@@ -17,7 +17,7 @@ struct thread {
 /**
 *
 */
-struct thread *thread_create(void (*fn)(void *param), void *param, int id);
+struct thread *thread_create(void (*fn)(void *param), void *param);
 
 /**
 *

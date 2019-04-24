@@ -14,7 +14,7 @@
 void print_1(void *param) { // demo function
     while(1) {
         printf("1\n");
-        sleep_add(1000);
+        sleep_add(1000000000);
     }
 }
 
@@ -29,11 +29,11 @@ void print_3(void *param) { // demo function
 int main() {
     sched_init();
 
-    struct thread *thread_1 = thread_create(&print_1, NULL, 11);
+    struct thread *thread_1 = thread_create(&print_1, NULL);
     sched_wakeup(thread_1);
 
-    struct thread *thread_2 = thread_create(&print_2, NULL, 12);
-    struct thread *thread_3 = thread_create(&print_3, NULL, 13);
+    struct thread *thread_2 = thread_create(&print_2, NULL);
+    struct thread *thread_3 = thread_create(&print_3, NULL);
 
     sched_wakeup(thread_2);
     sched_wakeup(thread_3);
