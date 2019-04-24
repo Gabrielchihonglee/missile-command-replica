@@ -294,13 +294,13 @@ void moveCursor(int *cur_x, int *cur_y, int new_x, int new_y) {
 }
 
 void *inputListener(void *arguments) {
-    //mousemask(ALL_MOUSE_EVENTS, NULL);
+    mousemask(ALL_MOUSE_EVENTS, NULL);
     int input;
     int cur_x = FRAME_WIDTH / 2;
     int cur_y = (FRAME_HEIGHT - 7) / 2;
     wattron(game_screen, COLOR_PAIR(5));
     mvwaddch(game_screen, cur_y, cur_x, '+');
-    MEVENT event;
+    //MEVENT event;
     while (game_live) {
         input = wgetch(game_screen);
         switch (input) {
