@@ -11,8 +11,10 @@
 #include <sys/mman.h>
 #include <time.h>
 #include <unistd.h>
-
 #include <signal.h>
+#include <pthread.h>
+
+pthread_mutex_t listener_lock;
 
 void print_1(void *param) { // demo function
     while(1) {
@@ -36,11 +38,12 @@ void print_3(void *param) { // demo function
 }
 
 void signal_dummy() {
-    printf("test");
+    printf("Signal triggered\n");
     return;
 }
 
 int main() {
+    pthread_mutex_init(&listener_lock, NULL);
     sched_init();
     signal(SIGUSR1, signal_dummy);
     listener_init();
@@ -56,7 +59,9 @@ int main() {
 
     while(1) {
         schedule();
+        pthread_mutex_unlock(&listener_lock);
         sleep_wait();
+        pthread_mutex_lock(&listener_lock);
         // something like "errno != EINTR" here
     }
 
