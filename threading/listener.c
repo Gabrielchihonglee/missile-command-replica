@@ -41,9 +41,7 @@ void *listener_main(void *argument) {
         FD_SET(0, &rfds);
         select(1, &rfds, NULL, NULL, NULL);
         syscall(SYS_tgkill, getpid(), getpid(), SIGUSR1);
-        pthread_mutex_lock(&sched_queue_lock);
-        sched_wakeup_no_check(listener_thread);
-        pthread_mutex_unlock(&sched_queue_lock);
+        sched_wakeup(listener_thread);
     }
 }
 

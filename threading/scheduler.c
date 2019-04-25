@@ -25,7 +25,9 @@ void sched_init() {
 }
 
 void sched_wakeup_no_check(struct thread *thread) {
+    pthread_mutex_lock(&sched_queue_lock);
     push_item_back(&thread_queue, thread);
+    pthread_mutex_unlock(&sched_queue_lock);
 }
 
 void sched_wakeup(struct thread *thread) {
@@ -42,8 +44,11 @@ void swap_to(struct thread *thread) {
 }
 
 void schedule() {
-    if (current_thread != main_thread && current_thread->state == STATE_RUNNING)
+    if (current_thread != main_thread && current_thread->state == STATE_RUNNING) {
+        pthread_mutex_lock(&sched_queue_lock);
         push_item_back(&thread_queue, current_thread);
+        pthread_mutex_unlock(&sched_queue_lock);
+    }
     if (!thread_queue)
         swap_to(main_thread);
     else

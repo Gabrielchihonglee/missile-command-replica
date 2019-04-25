@@ -6,8 +6,6 @@
 
 #include <pthread.h>
 
-extern pthread_mutex_t sched_queue_lock;
-
 void listener();
 
 void *listener_main();
