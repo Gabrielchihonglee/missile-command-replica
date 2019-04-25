@@ -3,6 +3,8 @@
 #include "sleeper.h"
 #include "scheduler.h"
 
+#include <pthread.h>
+
 #include <ucontext.h>
 #include <stdlib.h>
 
@@ -10,7 +12,11 @@ static struct list_item *thread_queue;
 struct thread *current_thread;
 struct thread *main_thread;
 
+pthread_mutex_t sched_queue_lock;
+
 void sched_init() {
+    pthread_mutex_init(&sched_queue_lock, NULL);
+
     main_thread = malloc(sizeof(*main_thread));
     *main_thread = (struct thread) {
         .state = STATE_IDLE

@@ -1,5 +1,6 @@
 #include "list.h"
 #include "thread.h"
+#include "listener.h"
 #include "scheduler.h"
 #include "sleeper.h"
 
@@ -14,26 +15,27 @@
 void print_1(void *param) { // demo function
     while(1) {
         printf("1\n");
-        sleep_add(1000000000);
+        sleep_add(1, 0);
     }
 }
 
 void print_2(void *param) { // demo function
     while(1) {
         printf("2\n");
-        sleep_add(2000000000);
+        sleep_add(2, 0);
     }
 }
 
 void print_3(void *param) { // demo function
     while(1) {
         printf("3\n");
-        sleep_add(3000000000);
+        sleep_add(3, 0);
     }
 }
 
 int main() {
     sched_init();
+    listener_init();
 
     struct thread *thread_1 = thread_create(&print_1, NULL);
     sched_wakeup(thread_1);
