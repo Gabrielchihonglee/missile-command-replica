@@ -8,8 +8,8 @@
 #include <ucontext.h>
 #include <stdlib.h>
 
-extern struct thread *current_thread;
 struct thread;
+extern struct thread *current_thread;
 
 void sched_init();
 

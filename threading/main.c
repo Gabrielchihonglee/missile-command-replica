@@ -14,8 +14,6 @@
 #include <signal.h>
 #include <pthread.h>
 
-pthread_mutex_t listener_lock;
-
 void print_1(void *param) { // demo function
     while(1) {
         printf("1\n");

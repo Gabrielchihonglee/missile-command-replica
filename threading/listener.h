@@ -6,6 +6,8 @@
 
 #include <pthread.h>
 
+pthread_mutex_t listener_lock;
+
 void listener();
 
 void *listener_main();
