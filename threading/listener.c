@@ -29,7 +29,7 @@ void listener() {
     read(1, &input, 1);
     printf("\n\n\n\n\n");
     printf("input: %c", input);
-    current_thread->state = STATE_IDLE;
+    current_thread->state = STATE_END;
     schedule();
     // do whatever is needed if input is detected
 }
@@ -40,9 +40,9 @@ void *listener_main(void *argument) {
         FD_ZERO(&rfds);
         FD_SET(0, &rfds);
         select(1, &rfds, NULL, NULL, NULL);
-        syscall(SYS_tgkill, getpid(), SIGUSR1);
+        syscall(SYS_tgkill, getpid(), getpid(), SIGUSR1);
         pthread_mutex_lock(&sched_queue_lock);
-        sched_wakeup(listener_thread);
+        sched_wakeup_no_check(listener_thread);
         pthread_mutex_unlock(&sched_queue_lock);
     }
 }
