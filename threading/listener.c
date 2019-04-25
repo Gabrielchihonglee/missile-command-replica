@@ -47,10 +47,6 @@ void *listener_main(void *argument) {
     }
 }
 
-void signal_dummy() {
-    return;
-}
-
 void listener_init() {
     pthread_t listener_main_thread;
     pthread_create(&listener_main_thread, NULL, listener_main, NULL);
@@ -63,6 +59,4 @@ void listener_init() {
 
     listener_thread = thread_create(&listener, NULL);
     listener_thread->state = STATE_IDLE;
-
-    signal(SIGUSR1, signal_dummy);
 }

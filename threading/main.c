@@ -12,6 +12,8 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <signal.h>
+
 void print_1(void *param) { // demo function
     while(1) {
         printf("1\n");
@@ -33,8 +35,14 @@ void print_3(void *param) { // demo function
     }
 }
 
+void signal_dummy() {
+    printf("test");
+    return;
+}
+
 int main() {
     sched_init();
+    signal(SIGUSR1, signal_dummy);
     listener_init();
 
     //struct thread *thread_1 = thread_create(&print_1, NULL);
@@ -49,6 +57,7 @@ int main() {
     while(1) {
         schedule();
         sleep_wait();
+        // something like "errno != EINTR" here
     }
 
     printf("END!!!\n");
