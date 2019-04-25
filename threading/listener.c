@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <termios.h>
+
 struct thread *listener_thread;
 
 void listener() {
@@ -45,10 +47,22 @@ void *listener_main(void *argument) {
     }
 }
 
+void signal_dummy() {
+    return;
+}
+
 void listener_init() {
     pthread_t listener_main_thread;
     pthread_create(&listener_main_thread, NULL, listener_main, NULL);
 
+    struct termios orig_tios;
+    tcgetattr(0, &orig_tios);
+    struct termios tios = orig_tios;
+    tios.c_lflag &= ~ICANON;
+    tcsetattr(0, TCSANOW, &tios);
+
     listener_thread = thread_create(&listener, NULL);
     listener_thread->state = STATE_IDLE;
+
+    signal(SIGUSR1, signal_dummy);
 }

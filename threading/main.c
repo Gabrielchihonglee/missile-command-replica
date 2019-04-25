@@ -37,11 +37,11 @@ int main() {
     sched_init();
     listener_init();
 
-    struct thread *thread_1 = thread_create(&print_1, NULL);
-    sched_wakeup(thread_1);
+    //struct thread *thread_1 = thread_create(&print_1, NULL);
+    //sched_wakeup(thread_1);
 
-    struct thread *thread_2 = thread_create(&print_2, NULL);
-    sched_wakeup(thread_2);
+    //struct thread *thread_2 = thread_create(&print_2, NULL);
+    //sched_wakeup(thread_2);
 
     struct thread *thread_3 = thread_create(&print_3, NULL);
     sched_wakeup(thread_3);
