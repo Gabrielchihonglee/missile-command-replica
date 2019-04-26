@@ -5,6 +5,7 @@
 
 #include <pthread.h>
 #include <time.h>
+#include <unistd.h>
 
 static struct list_item *sleeping_threads;
 
@@ -38,7 +39,9 @@ void sleep_add(unsigned int sec, unsigned int nsec) {
 }
 
 void sleep_wait() {
-    if (sleeping_threads) {
+    if (!sleeping_threads) {
+        pause();
+    } else {
         struct timespec spec;
         clock_gettime(CLOCK_REALTIME, &spec);
         struct timespec wakeup_time = ((struct sleeping_thread *)sleeping_threads->content)->wakeup;
