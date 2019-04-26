@@ -6,12 +6,10 @@
 
 #include <pthread.h>
 
-pthread_mutex_t listener_lock;
+pthread_mutex_t in_sleep;
 
-void listener();
+void *input_get();
 
-void *listener_main();
-
-void listener_init();
+void input_init();
 
 #endif

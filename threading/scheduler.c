@@ -48,9 +48,8 @@ void swap_to(struct thread *thread) {
 
 void schedule() {
     pthread_mutex_lock(&sched_queue_lock);
-    if (current_thread != main_thread && current_thread->state == STATE_RUNNING) {
+    if (current_thread != main_thread && current_thread->state == STATE_RUNNING)
         push_item_back(&thread_queue, current_thread);
-    }
     if (!thread_queue)
         swap_to(main_thread);
     else

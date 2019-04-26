@@ -36,15 +36,15 @@ void print_3(void *param) { // demo function
 }
 
 void signal_dummy() {
-    printf("Signal triggered\n");
+    //printf("Signal triggered\n");
     return;
 }
 
 int main() {
-    pthread_mutex_init(&listener_lock, NULL);
+    pthread_mutex_init(&in_sleep, NULL);
     sched_init();
     signal(SIGUSR1, signal_dummy);
-    listener_init();
+    input_init();
 
     //struct thread *thread_1 = thread_create(&print_1, NULL);
     //sched_wakeup(thread_1);
@@ -57,9 +57,7 @@ int main() {
 
     while(1) {
         schedule();
-        pthread_mutex_unlock(&listener_lock);
         sleep_wait();
-        pthread_mutex_lock(&listener_lock);
         // something like "errno != EINTR" here
     }
 

@@ -3,6 +3,7 @@
 #include "scheduler.h"
 #include "sleeper.h"
 
+#include <pthread.h>
 #include <time.h>
 
 static struct list_item *sleeping_threads;
@@ -15,7 +16,7 @@ int sleep_sort(void *a, void *b) {
     return (long)a_time.tv_sec - b_time.tv_sec;
 }
 
-void sleep_add(int sec, int nsec) {
+void sleep_add(unsigned int sec, unsigned int nsec) {
     struct timespec wakeup;
     clock_gettime(CLOCK_REALTIME, &wakeup);
     wakeup.tv_sec += sec;
@@ -50,7 +51,9 @@ void sleep_wait() {
                 .tv_sec = wakeup_time.tv_sec - spec.tv_sec,
                 .tv_nsec = wakeup_time.tv_nsec - spec.tv_nsec
             };
+            pthread_mutex_unlock(&in_sleep);
             nanosleep(&sleep_length, NULL);
+            pthread_mutex_lock(&in_sleep);
             clock_gettime(CLOCK_REALTIME, &spec);
         }
 

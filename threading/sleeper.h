@@ -11,10 +11,12 @@ struct sleeping_thread {
     struct timespec wakeup;
 };
 
+extern pthread_mutex_t in_sleep;
+
 /**
 * Adds sleeping_thread to the sleeping_threads list, ordered by wakeup time.
 */
-void sleep_add(int sec, int nsec);
+void sleep_add(unsigned int sec, unsigned int nsec);
 
 /**
 * Checks if the first sleeping_thread should wake up, if so, calls sched_wakeup,
