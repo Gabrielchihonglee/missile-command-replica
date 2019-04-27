@@ -1,5 +1,5 @@
-#ifndef LISTENER_H
-#define LISTENER_H
+#ifndef INPUT_H
+#define INPUT_H
 
 #include "thread.h"
 #include "scheduler.h"

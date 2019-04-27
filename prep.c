@@ -58,8 +58,8 @@ void prep() {
     noecho();
     drawScreenSettings(prep_screen, 0);
     wattron(prep_screen, COLOR_PAIR(5));
-    drawFromFile(prep_screen, 18, FRAME_HEIGHT - 15, "graphics/defend-text", DRAW);
-    drawFromFile(prep_screen, 72, FRAME_HEIGHT - 15, "graphics/cities-text", DRAW);
+    draw_from_file(prep_screen, 18, FRAME_HEIGHT - 15, "graphics/defend-text", DRAW);
+    draw_from_file(prep_screen, 72, FRAME_HEIGHT - 15, "graphics/cities-text", DRAW);
 
     refreshHighScore(prep_screen);
 

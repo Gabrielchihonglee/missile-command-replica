@@ -1,5 +1,7 @@
 #include "functions.h"
 
+#include "threading/sleeper.h"
+
 #include <ncurses.h>
 #include <string.h>
 #include <stdlib.h>
@@ -35,7 +37,7 @@ int carousel_thread_color_pair;
 int score = 0;
 int high_score = 0;
 
-void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], enum drawMode mode) { // mode 1: draw 0: erase/draw with backgound
+void draw_from_file(WINDOW *screen, int start_x, int start_y, char file[], enum drawMode mode) { // mode 1: draw 0: erase/draw with backgound
     FILE *fp = fopen(file, "r");
     char symbol;
     int x, y;
@@ -65,7 +67,7 @@ void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], enum dr
     }
 }
 
-void drawFromString(WINDOW *screen, int start_x, int start_y, char *line, enum drawMode mode) {
+void draw_from_string(WINDOW *screen, int start_x, int start_y, char *line, enum drawMode mode) {
     int length = strlen(line);
     int x, y;
     wmove(screen, start_y, start_x);
@@ -94,28 +96,21 @@ void drawFromString(WINDOW *screen, int start_x, int start_y, char *line, enum d
     }
 }
 
-void updateSmallExplosionStage(WINDOW *screen, int from_missile, int to_missile, int color) {
-    pthread_mutex_lock(&lock);
+void update_small_explosion_stage(WINDOW *screen, int from_missile, int to_missile, int color) {
     wattron(screen, COLOR_PAIR(color));
-    for (int i = from_missile; i < to_missile; i++) {
-        drawFromString(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_1, DRAW); // draw stage 1
-    }
-    pthread_mutex_unlock(&lock);
-    usleep(100000);
-    pthread_mutex_lock(&lock);
+    for (int i = from_missile; i < to_missile; i++)
+        draw_from_string(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_1, DRAW); // draw stage 1
+    sleep_add(0, 100000000);
+
     wattron(screen, COLOR_PAIR(color));
-    for (int i = from_missile; i < to_missile; i++) {
-        drawFromString(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_2, DRAW); // draw stage 2
-    }
-    pthread_mutex_unlock(&lock);
-    usleep(100000);
-    pthread_mutex_lock(&lock);
+    for (int i = from_missile; i < to_missile; i++)
+        draw_from_string(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_2, DRAW); // draw stage 2
+    sleep_add(0, 100000000);
+
     wattron(screen, COLOR_PAIR(color));
-    for (int i = from_missile; i < to_missile; i++) {
-        drawFromString(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_2, ERASE); // erase stage 2
-    }
-    pthread_mutex_unlock(&lock);
-    usleep(1000);
+    for (int i = from_missile; i < to_missile; i++)
+        draw_from_string(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_2, ERASE); // erase stage 2
+    sleep_add(0, 100000000);
 }
 
 /**
@@ -177,10 +172,10 @@ void drawScreenSettings(WINDOW *screen, int cities_only) {
     pthread_mutex_lock(&lock);
     if (!cities_only) {
         wattron(screen, COLOR_PAIR(84));
-        drawFromFile(screen, 0, FRAME_HEIGHT - 3, "graphics/ground", ERASE);
+        draw_from_file(screen, 0, FRAME_HEIGHT - 3, "graphics/ground", ERASE);
         for (int i = 0; i < 3; i++) {
             wattron(screen, COLOR_PAIR(84));
-            drawFromFile(screen, bases_x_pos[i], FRAME_HEIGHT - 6, "graphics/base", ERASE);
+            draw_from_file(screen, bases_x_pos[i], FRAME_HEIGHT - 6, "graphics/base", ERASE);
         }
     }
     for (int i = 0; i < 6; i++) {
@@ -188,9 +183,9 @@ void drawScreenSettings(WINDOW *screen, int cities_only) {
             continue;
         }
         wattron(screen, COLOR_PAIR(3));
-        drawFromFile(screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-1", DRAW);
+        draw_from_file(screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-1", DRAW);
         wattron(screen, COLOR_PAIR(5));
-        drawFromFile(screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-2", DRAW);
+        draw_from_file(screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-2", DRAW);
     }
     pthread_mutex_unlock(&lock);
 }

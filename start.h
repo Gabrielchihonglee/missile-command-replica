@@ -3,7 +3,7 @@
 
 #include <ncurses.h>
 
-void startScreenTextColor(WINDOW *screen, int color);
+void start_screen_text_color(WINDOW *screen, int color);
 
 void start();
 

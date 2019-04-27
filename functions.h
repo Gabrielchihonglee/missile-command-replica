@@ -29,11 +29,11 @@ extern int carousel_thread_color_pair;
 extern int score;
 extern int high_score;
 
-void drawFromFile(WINDOW *screen, int start_x, int start_y, char file[], enum drawMode mode);
+void draw_from_file(WINDOW *screen, int start_x, int start_y, char file[], enum drawMode mode);
 
-void drawFromString(WINDOW *screen, int start_x, int start_y, char *line, enum drawMode mode);
+void draw_from_string(WINDOW *screen, int start_x, int start_y, char *line, enum drawMode mode);
 
-void updateSmallExplosionStage(WINDOW *screen, int from_missile, int to_missile, int color);
+void update_small_explosion_stage(WINDOW *screen, int from_missile, int to_missile, int color);
 
 void refreshHighScore(WINDOW *screen);
 

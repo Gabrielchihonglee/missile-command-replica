@@ -4,7 +4,6 @@
 #include "scheduler.h"
 
 #include <pthread.h>
-
 #include <ucontext.h>
 #include <stdlib.h>
 

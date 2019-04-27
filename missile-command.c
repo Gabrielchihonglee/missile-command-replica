@@ -1,3 +1,14 @@
+#include "functions.h"
+#include "start.h"
+#include "prep.h"
+#include "game.h"
+
+#include "threading/list.h"
+#include "threading/thread.h"
+#include "threading/input.h"
+#include "threading/scheduler.h"
+#include "threading/sleeper.h"
+
 #include <ncurses.h>
 #include <string.h>
 #include <stdlib.h>
@@ -7,14 +18,11 @@
 #include <time.h>
 #include <pthread.h>
 
-#include "functions.h"
-#include "start.h"
-#include "prep.h"
-#include "game.h"
-
 int main() {
+    pthread_mutex_init(&in_sleep, NULL);
+    sched_init();
+
     srand(time(0));
-    //srand(611715);
     initscr();
     raw();
     curs_set(0);
@@ -34,11 +42,18 @@ int main() {
     init_pair(48, COLOR_YELLOW, COLOR_WHITE);
     init_pair(84, COLOR_WHITE, COLOR_YELLOW);
 
-    start();
+    struct thread *start_thread = thread_create(&start, NULL);
+    sched_wakeup(start_thread);
 
-    prep();
+    //prep();
 
-    game();
+    //game();
+
+    while(1) {
+        schedule();
+        sleep_till_next();
+        // something like "errno != EINTR" here
+    }
 
     endwin();
     pthread_mutex_destroy(&lock);

@@ -1,6 +1,6 @@
 #define _GNU_SOURCE
 
-#include "listener.h"
+#include "input.h"
 #include "thread.h"
 #include "scheduler.h"
 
@@ -28,6 +28,7 @@ sigset_t mask;
 sigset_t old_mask;
 
 void input_set_thread() {
+    pthread_mutex_unlock(&stop_read_input);
     input_thread = current_thread;
     input_thread->state = STATE_IDLE;
     schedule();
@@ -44,7 +45,8 @@ void handle_input() {
 }
 
 void *input_get(void *argument) {
-    while (1)
+    while (1) {
+        pthread_mutex_lock(&stop_read_input);
         if (input_thread) {
             fd_set rfds;
             FD_ZERO(&rfds);
@@ -57,6 +59,7 @@ void *input_get(void *argument) {
             input_thread = NULL;
             pthread_mutex_unlock(&in_sleep);
         }
+    }
 }
 
 void input_init() {

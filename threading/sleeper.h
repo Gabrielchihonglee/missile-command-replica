@@ -22,7 +22,7 @@ void sleep_add(unsigned int sec, unsigned int nsec);
 * Checks if the first sleeping_thread should wake up, if so, calls sched_wakeup,
 * also removing the sleeping_thread from the sleeping_threads list.
 */
-void sleep_wait();
+void sleep_till_next();
 
 void swapper();
 

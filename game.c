@@ -124,15 +124,15 @@ void *updateMissileExplosion(void *arguments) {
     struct missileExplosionThreadArg *args = arguments;
     usleep(10000);
     pthread_mutex_lock(&lock);
-    drawFromString(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_1, DRAW);
+    draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_1, DRAW);
     pthread_mutex_unlock(&lock);
     usleep(100000);
     pthread_mutex_lock(&lock);
-    drawFromString(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_2, DRAW);
+    draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_2, DRAW);
     pthread_mutex_unlock(&lock);
     usleep(100000);
     pthread_mutex_lock(&lock);
-    drawFromString(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_2, ERASE);
+    draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_2, ERASE);
     pthread_mutex_unlock(&lock);
 
     free(arguments);
@@ -166,7 +166,7 @@ void checkHitPlayer(float x, float y) {
         if ((x >= bases[i].x) && (x <= (bases[i].x + 7))) {
             bases[i].missile_count = 0;
             pthread_mutex_lock(&lock);
-            drawFromFile(game_screen, bases[i].x, FRAME_HEIGHT - 6, "graphics/base", ERASE);
+            draw_from_file(game_screen, bases[i].x, FRAME_HEIGHT - 6, "graphics/base", ERASE);
             pthread_mutex_unlock(&lock);
             updateMissileCount();
         }

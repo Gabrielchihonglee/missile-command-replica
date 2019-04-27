@@ -38,7 +38,7 @@ void sleep_add(unsigned int sec, unsigned int nsec) {
     current_thread->state = STATE_RUNNING;
 }
 
-void sleep_wait() {
+void sleep_till_next() {
     if (!sleeping_threads) {
         pause();
     } else {
