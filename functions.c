@@ -141,7 +141,7 @@ Score Multiplier:
 Info from: https://strategywiki.org/wiki/Missile_Command/Walkthrough
 **/
 
-void refreshHighScore(WINDOW *screen) {
+void refresh_high_score(WINDOW *screen) {
     char score_text[10];
     char high_score_text[10];
     sprintf(score_text, "%i", score);

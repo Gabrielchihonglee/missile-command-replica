@@ -32,7 +32,7 @@ static char *flash_thread_text;
 static int flash_thread_duration;
 static int flash_thread_color_pair;
 
-void flashFromString() {
+void flash_from_string() {
     while (flash_thread_live) {
         wattron(flash_thread_screen, COLOR_PAIR(flash_thread_color_pair));
         mvwprintw(flash_thread_screen, flash_thread_y, flash_thread_x, flash_thread_text);
@@ -54,12 +54,8 @@ void flashFromString() {
 void temp_quit() {
     while (1) {
         input_set_thread();
-        //char input;
-        //read(1, &input, 1);
-        //printf("input: %c\n", input);
         exit(0);
     }
-    // do whatever is needed if input is detected
 }
 
 void prep() {
@@ -75,10 +71,10 @@ void prep() {
     draw_from_file(prep_screen, 18, FRAME_HEIGHT - 15, "graphics/defend-text", DRAW);
     draw_from_file(prep_screen, 72, FRAME_HEIGHT - 15, "graphics/cities-text", DRAW);
 
-    refreshHighScore(prep_screen);
+    refresh_high_score(prep_screen);
 
     wattron(prep_screen, COLOR_PAIR(2));
-    char prep_screen_arrow_string[FRAME_WIDTH - 1];
+    char *prep_screen_arrow_string = malloc(sizeof(char) * (FRAME_WIDTH - 1));
     for (int i = 0; i < FRAME_WIDTH - 1; i++) {
         prep_screen_arrow_string[i] = ' ';
     }
@@ -93,9 +89,7 @@ void prep() {
     flash_thread_text = prep_screen_arrow_string;
     flash_thread_duration = 1200000;
     flash_thread_color_pair = 2;
-    //pthread_t prep_screen_arrow_thread;
-    //pthread_create(&prep_screen_arrow_thread, NULL, flashFromString, NULL);
-    struct thread *prep_screen_arrow_thread = thread_create(&flashFromString, NULL);
+    struct thread *prep_screen_arrow_thread = thread_create(&flash_from_string, NULL);
     sched_wakeup(prep_screen_arrow_thread);
 
     sleep_add(1, 0);
@@ -107,8 +101,6 @@ void prep() {
     carousel_thread_y = FRAME_HEIGHT - 1;
     carousel_thread_text = "GABRIEL (LANC UNI ID: 37526367) @ 2019     INSERT COINS     1 COIN 1 PLAY";
     carousel_thread_color_pair = 84;
-    //pthread_t prep_screen_carousel_thread;
-    //pthread_create(&prep_screen_carousel_thread, NULL, carousel_from_string, NULL);
-    //struct thread *prep_screen_carousel_thread = thread_create(&carousel_from_string, NULL);
-    //sched_wakeup(prep_screen_carousel_thread);
+    struct thread *prep_screen_carousel_thread = thread_create(&carousel_from_string, NULL);
+    sched_wakeup(prep_screen_carousel_thread);
 }
