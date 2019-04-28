@@ -34,16 +34,6 @@ void input_set_thread() {
     schedule();
 }
 
-void handle_input() {
-    while (1) {
-        input_set_thread();
-        char input;
-        read(1, &input, 1);
-        printf("input: %c\n", input);
-    }
-    // do whatever is needed if input is detected
-}
-
 void *input_get(void *argument) {
     while (1) {
         pthread_mutex_lock(&stop_read_input);
@@ -69,12 +59,11 @@ void input_init() {
     pthread_create(&input_get_pthread, NULL, input_get, NULL);
 
     // disable ICANON to get live input
+    /**
     struct termios orig_tios;
     tcgetattr(0, &orig_tios);
     struct termios tios = orig_tios;
     tios.c_lflag &= ~ICANON;
     tcsetattr(0, TCSANOW, &tios);
-
-    struct thread *input_handler = thread_create(&handle_input, NULL);
-    sched_wakeup(input_handler);
+    **/
 }

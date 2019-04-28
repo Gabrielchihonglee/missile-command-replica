@@ -51,7 +51,22 @@ void flashFromString() {
     }
 }
 
+void temp_quit() {
+    while (1) {
+        input_set_thread();
+        //char input;
+        //read(1, &input, 1);
+        //printf("input: %c\n", input);
+        exit(0);
+    }
+    // do whatever is needed if input is detected
+}
+
 void prep() {
+    input_init();
+    struct thread *input_handler = thread_create(&temp_quit, NULL);
+    sched_wakeup(input_handler);
+
     WINDOW *prep_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(prep_screen, A_BOLD);
     noecho();
@@ -96,13 +111,4 @@ void prep() {
     //pthread_create(&prep_screen_carousel_thread, NULL, carousel_from_string, NULL);
     //struct thread *prep_screen_carousel_thread = thread_create(&carousel_from_string, NULL);
     //sched_wakeup(prep_screen_carousel_thread);
-/**
-    wgetch(prep_screen);
-    werase(prep_screen);
-    flash_thread_live = 0;
-    carousel_thread_live = 0;
-    //pthread_join(prep_screen_arrow_thread, NULL);
-    pthread_join(prep_screen_carousel_thread, NULL);
-    delwin(prep_screen);
-**/
 }

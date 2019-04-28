@@ -1,6 +1,6 @@
-OBJS	= missile-command.o functions.o start.o prep.o game.o threading/list.o threading/thread.o threading/scheduler.o threading/sleeper.o
-SOURCE	= missile-command.c functions.c start.c prep.c game.c threading/list.c threading/thread.c threading/scheduler.c threading/sleeper.c
-HEADER	= functions.h start.h prep.h game.h threading/list.h threading/thread.h threading/scheduler.h threading/sleeper.h
+OBJS	= missile-command.o functions.o start.o prep.o game.o threading/list.o threading/thread.o threading/scheduler.o threading/sleeper.o threading/input.o
+SOURCE	= missile-command.c functions.c start.c prep.c game.c threading/list.c threading/thread.c threading/scheduler.c threading/sleeper.c threading/input.c
+HEADER	= functions.h start.h prep.h game.h threading/list.h threading/thread.h threading/scheduler.h threading/sleeper.h threading/input.h
 OUT	= missile-command
 CC	 = gcc
 FLAGS	 = -g -c -Wall
@@ -35,6 +35,9 @@ threading/scheduler.o: threading/scheduler.c
 
 threading/sleeper.o: threading/sleeper.c
 	$(CC) $(FLAGS) threading/sleeper.c -o threading/sleeper.o
+
+threading/input.o: threading/input.c
+	$(CC) $(FLAGS) threading/input.c -o threading/input.o
 
 
 clean:

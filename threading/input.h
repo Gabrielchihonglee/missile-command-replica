@@ -8,6 +8,8 @@
 
 pthread_mutex_t in_sleep;
 
+void input_set_thread();
+
 void *input_get();
 
 void input_init();
