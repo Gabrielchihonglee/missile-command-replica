@@ -96,6 +96,18 @@ void draw_from_string(WINDOW *screen, int start_x, int start_y, char *line, enum
     }
 }
 
+char *file_to_string(char *file_name) {
+    FILE *file = fopen(file_name, "r");
+    fseek(file, 0, SEEK_END);
+    int length = ftell(file);
+    char *string = malloc(length + 1);
+    fseek(file, 0, SEEK_SET);
+    fread(string, 1, length, file);
+    string[length] = '\0';
+    fclose(file);
+    return string;
+}
+
 void update_small_explosion_stage(WINDOW *screen, int from_missile, int to_missile, int color) {
     wattron(screen, COLOR_PAIR(color));
     for (int i = from_missile; i < to_missile; i++)

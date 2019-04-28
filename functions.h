@@ -33,6 +33,8 @@ void draw_from_file(WINDOW *screen, int start_x, int start_y, char file[], enum 
 
 void draw_from_string(WINDOW *screen, int start_x, int start_y, char *line, enum drawMode mode);
 
+char *file_to_string(char *file_name);
+
 void update_small_explosion_stage(WINDOW *screen, int from_missile, int to_missile, int color);
 
 void refreshHighScore(WINDOW *screen);

@@ -45,14 +45,7 @@ void start() {
         }
     }
 
-    FILE *explosion_small_stage_1 = fopen("graphics/explosion-small-stage-1", "r");
-    fseek (explosion_small_stage_1, 0, SEEK_END);
-    int stage_1_length = ftell(explosion_small_stage_1);
-    STAGE_1 = malloc(sizeof(char) * stage_1_length + 1);
-    fseek (explosion_small_stage_1, 0, SEEK_SET);
-    fread(STAGE_1, 1, stage_1_length, explosion_small_stage_1);
-    STAGE_1[stage_1_length] = '\0';
-    fclose(explosion_small_stage_1);
+    STAGE_1 = file_to_string("graphics/explosion-small-stage-1");
 
     FILE *explosion_small_stage_2 = fopen("graphics/explosion-small-stage-2", "r");
     fseek (explosion_small_stage_2, 0, SEEK_END);
