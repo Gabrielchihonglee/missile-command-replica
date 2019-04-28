@@ -46,35 +46,11 @@ void start() {
     }
 
     STAGE_1 = file_to_string("graphics/explosion-small-stage-1");
+    STAGE_2 = file_to_string("graphics/explosion-small-stage-2");
+    LARGE_STAGE_1 = file_to_string("graphics/explosion-large-stage-1");
+    LARGE_STAGE_2 = file_to_string("graphics/explosion-large-stage-2");
 
-    FILE *explosion_small_stage_2 = fopen("graphics/explosion-small-stage-2", "r");
-    fseek (explosion_small_stage_2, 0, SEEK_END);
-    int stage_2_length = ftell(explosion_small_stage_2);
-    STAGE_2 = malloc(sizeof(char) * stage_2_length + 1);
-    fseek (explosion_small_stage_2, 0, SEEK_SET);
-    fread(STAGE_2, 2, stage_2_length, explosion_small_stage_2);
-    STAGE_2[stage_2_length] = '\0';
-    fclose(explosion_small_stage_2);
-
-    FILE *explosion_large_stage_1 = fopen("graphics/explosion-large-stage-1", "r");
-    fseek (explosion_large_stage_1, 0, SEEK_END);
-    int large_stage_1_length = ftell(explosion_large_stage_1);
-    LARGE_STAGE_1 = malloc(sizeof(char) * large_stage_1_length + 1);
-    fseek (explosion_large_stage_1, 0, SEEK_SET);
-    fread(LARGE_STAGE_1, 1, large_stage_1_length, explosion_large_stage_1);
-    LARGE_STAGE_1[large_stage_1_length] = '\0';
-    fclose(explosion_large_stage_1);
-
-    FILE *explosion_large_stage_3 = fopen("graphics/explosion-large-stage-2", "r");
-    fseek (explosion_large_stage_3, 0, SEEK_END);
-    int large_stage_2_length = ftell(explosion_large_stage_3);
-    LARGE_STAGE_2 = malloc(sizeof(char) * large_stage_2_length + 1);
-    fseek (explosion_large_stage_3, 0, SEEK_SET);
-    fread(LARGE_STAGE_2, 2, large_stage_2_length, explosion_large_stage_3);
-    LARGE_STAGE_2[large_stage_2_length] = '\0';
-    fclose(explosion_large_stage_3);
-
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 3; i++) {
         update_small_explosion_stage(start_screen, 0, 10, 4);
         start_screen_text_color(start_screen, 3);
         update_small_explosion_stage(start_screen, 10, 20, 5);

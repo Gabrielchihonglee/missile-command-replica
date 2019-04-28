@@ -112,17 +112,17 @@ void update_small_explosion_stage(WINDOW *screen, int from_missile, int to_missi
     wattron(screen, COLOR_PAIR(color));
     for (int i = from_missile; i < to_missile; i++)
         draw_from_string(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_1, DRAW); // draw stage 1
-    sleep_add(0, 100000000);
+    sleep_add(0, 60000000);
 
     wattron(screen, COLOR_PAIR(color));
     for (int i = from_missile; i < to_missile; i++)
         draw_from_string(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_2, DRAW); // draw stage 2
-    sleep_add(0, 100000000);
+    sleep_add(0, 60000000);
 
     wattron(screen, COLOR_PAIR(color));
     for (int i = from_missile; i < to_missile; i++)
         draw_from_string(screen, start_explosion_pos[i][0], start_explosion_pos[i][1], STAGE_2, ERASE); // erase stage 2
-    sleep_add(0, 100000000);
+    sleep_add(0, 60000000);
 }
 
 /**
