@@ -39,8 +39,8 @@ void update_small_explosion_stage(WINDOW *screen, int from_missile, int to_missi
 
 void refreshHighScore(WINDOW *screen);
 
-void *carouselFromString(void *argument);
+void carousel_from_string();
 
-void drawScreenSettings(WINDOW *screen, int cities_only);
+void draw_screen_settings(WINDOW *screen, int cities_only);
 
 #endif

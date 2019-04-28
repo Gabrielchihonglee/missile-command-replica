@@ -359,7 +359,7 @@ void game() {
     //werase(main_screen);
     //erase();
 
-    drawScreenSettings(game_screen, 0);
+    draw_screen_settings(game_screen, 0);
     wrefresh(game_screen);
 
     for (int i = 0; i < 3; i++) {
