@@ -12,6 +12,8 @@ void input_set_thread();
 
 void *input_get();
 
+void signal_dummy();
+
 void input_init();
 
 #endif

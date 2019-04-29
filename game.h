@@ -5,19 +5,19 @@
 
 enum missileType {PLAYER, HOSTILE_NORMAL, HOSTILE_CRAZY};
 
-void shootPlayerMissile(int tar_x, int tar_y, int base);
+void shoot_player_missile(int tar_x, int tar_y, int base);
 
-void killMissile(void *missile_input);
+void kill_missile(void *missile_input);
 
-void *updateMissileExplosion(void *arguments);
+void update_missile_explosion(void *arguments);
 
-void checkHitPlayer(float x, float y);
+void check_hit_player(float x, float y);
 
-void *updateHostileMissiles(void *arguments);
+void updateHostileMissiles(void *arguments);
 
-void *inputListener(void *arguments);
+void inputListener(void *arguments);
 
-void updateMissileCount();
+void update_missile_count();
 
 void game();
 

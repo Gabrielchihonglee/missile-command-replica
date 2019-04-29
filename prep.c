@@ -1,4 +1,5 @@
 #include "prep.h"
+#include "game.h"
 #include "functions.h"
 
 #include "threading/list.h"
@@ -35,6 +36,8 @@ static char *flash_thread_text;
 static int flash_thread_duration;
 static int flash_thread_color_pair;
 
+struct thread *game_thread;
+
 void flash_from_string() {
     while (flash_thread_live) {
         wattron(flash_thread_screen, COLOR_PAIR(flash_thread_color_pair));
@@ -54,64 +57,26 @@ void flash_from_string() {
     }
 }
 
-void temp_quit() {
+void prep_screen_input() {
     int input;
-    while (1) {
-        input_set_thread();
-        input = wgetch(prep_screen);
-        switch (input) {
-            /**case KEY_MOUSE:
-                if (getmouse(&event) == OK) {
-                    if (event.x < FRAME_WIDTH && event.y < (FRAME_HEIGHT - 7)) {
-                        moveCursor(&cur_x, &cur_y, event.x, event.y);
-                    }
-                  }
-                break;
-            case KEY_LEFT:
-                if (cur_x > 0) {
-                    moveCursor(&cur_x, &cur_y, cur_x - 1, cur_y);
-                }
-                break;
-            case KEY_RIGHT:
-                if (cur_x < FRAME_WIDTH - 1) {
-                    moveCursor(&cur_x, &cur_y, cur_x + 1, cur_y);
-                }
-                break;
-            case KEY_UP:
-                if (cur_y > 0) {
-                    moveCursor(&cur_x, &cur_y, cur_x, cur_y - 1);
-                }
-                break;
-            case KEY_DOWN:
-                if (cur_y < FRAME_HEIGHT - 7) {
-                    moveCursor(&cur_x, &cur_y, cur_x, cur_y + 1);
-                }
-                break;
-            case '1':
-                shootPlayerMissile(cur_x, cur_y, 0);
-                break;
-            case '2':
-                shootPlayerMissile(cur_x, cur_y, 1);
-                break;
-            case '3':
-                shootPlayerMissile(cur_x, cur_y, 2);
-                break;**/
-            case 'q':
-                endwin();
-                exit(0);
-                break;
-        }
+    input_set_thread();
+    input = wgetch(prep_screen);
+    flash_thread_live = 0;
+    carousel_thread_live = 0;
+    switch (input) {
+        case 'q':
+            endwin();
+            exit(0);
+            break;
+        default:
+            sched_wakeup(game_thread);
     }
-}
-
-void signal_dummy() {
-    return;
 }
 
 void prep() {
     input_init();
     signal(SIGUSR1, signal_dummy);
-    struct thread *input_handler = thread_create(&temp_quit, NULL);
+    struct thread *input_handler = thread_create(&prep_screen_input, NULL);
     sched_wakeup(input_handler);
 
     prep_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
@@ -154,4 +119,6 @@ void prep() {
     carousel_thread_color_pair = 84;
     struct thread *prep_screen_carousel_thread = thread_create(&carousel_from_string, NULL);
     sched_wakeup(prep_screen_carousel_thread);
+
+    game_thread = thread_create(&game, NULL);
 }

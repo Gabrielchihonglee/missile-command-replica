@@ -47,8 +47,6 @@ void start() {
 
     STAGE_1 = file_to_string("graphics/explosion-small-stage-1");
     STAGE_2 = file_to_string("graphics/explosion-small-stage-2");
-    LARGE_STAGE_1 = file_to_string("graphics/explosion-large-stage-1");
-    LARGE_STAGE_2 = file_to_string("graphics/explosion-large-stage-2");
 
     for (int i = 0; i < 3; i++) {
         update_small_explosion_stage(start_screen, 0, 10, 4);

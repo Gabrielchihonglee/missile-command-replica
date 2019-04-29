@@ -1,6 +1,12 @@
 #include "game.h"
 #include "functions.h"
 
+#include "threading/list.h"
+#include "threading/thread.h"
+#include "threading/input.h"
+#include "threading/scheduler.h"
+#include "threading/sleeper.h"
+
 #include <ncurses.h>
 #include <string.h>
 #include <stdlib.h>
@@ -9,6 +15,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <pthread.h>
+#include <signal.h>
 
 struct missile {
     enum missileType type;
@@ -48,10 +55,11 @@ static struct missile hostile_missiles[10] = {0};
 static struct missile player_missiles[45] = {0};
 
 char *STAGE_1, *STAGE_2;
+char *LARGE_STAGE_1, *LARGE_STAGE_2;
 
-void shootPlayerMissile(int tar_x, int tar_y, int base) {
+void shoot_player_missile(int tar_x, int tar_y, int base) {
     if (!bases[base].missile_count) {
-        updateMissileCount();
+        update_missile_count();
         return;
     }
     pthread_mutex_lock(&lock);
@@ -81,10 +89,10 @@ void shootPlayerMissile(int tar_x, int tar_y, int base) {
         }
     }
     bases[base].missile_count--;
-    updateMissileCount();
+    update_missile_count();
 }
 
-void updateMissileCount() {
+void update_missile_count() {
     char missile_count[3];
     for (int i = 0; i < 3; i++) {
         if (!bases[i].missile_count) {
@@ -103,7 +111,7 @@ void updateMissileCount() {
     }
 }
 
-void killMissile(void *missile_input) {
+void kill_missile(void *missile_input) {
     struct missile *missile = missile_input;
     pthread_mutex_lock(&lock);
     missile->live = 0;
@@ -120,37 +128,41 @@ void killMissile(void *missile_input) {
     pthread_mutex_unlock(&lock);
 }
 
-void *updateMissileExplosion(void *arguments) {
+void update_missile_explosion(void *arguments) {
     struct missileExplosionThreadArg *args = arguments;
-    usleep(10000);
+    //usleep(10000);
+    sleep_add(0, 100000000);
     pthread_mutex_lock(&lock);
     draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_1, DRAW);
     pthread_mutex_unlock(&lock);
-    usleep(100000);
+    //usleep(10000);
+    sleep_add(0, 100000000);
     pthread_mutex_lock(&lock);
     draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_2, DRAW);
     pthread_mutex_unlock(&lock);
-    usleep(100000);
+    //usleep(10000);
+    sleep_add(0, 100000000);
     pthread_mutex_lock(&lock);
     draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_2, ERASE);
     pthread_mutex_unlock(&lock);
 
     free(arguments);
-    return NULL;
 }
 
-void initMissileExplosion(int x, int y) {
+void init_missile_explosion(int x, int y) {
     struct missileExplosionThreadArg *missile_explosion_args = malloc(sizeof(*missile_explosion_args));
     *missile_explosion_args = (struct missileExplosionThreadArg) {
         .screen = game_screen,
         .x = x,
         .y = y
     };
-    pthread_t missile_explosion_thread;
-    pthread_create(&missile_explosion_thread, NULL, updateMissileExplosion, missile_explosion_args);
+    //pthread_t missile_explosion_thread;
+    //pthread_create(&missile_explosion_thread, NULL, update_missile_explosion, missile_explosion_args);
+    struct thread *missile_explosion_thread = thread_create(&update_missile_explosion, missile_explosion_args);
+    sched_wakeup(missile_explosion_thread);
 }
 
-void checkHitPlayer(float x, float y) {
+void check_hit_player(float x, float y) {
     for (int i = 0; i < 6; i++) {
         if ((x >= cities_x_pos[i]) && (x <= (cities_x_pos[i] + 6))) {
             pthread_mutex_lock(&lock);
@@ -160,7 +172,7 @@ void checkHitPlayer(float x, float y) {
             pthread_mutex_unlock(&lock);
             cities[i].survive = -1;
         }
-        initMissileExplosion(round(x), round(y));
+        init_missile_explosion(round(x), round(y));
     }
     for (int i = 0; i < 3; i++) {
         if ((x >= bases[i].x) && (x <= (bases[i].x + 7))) {
@@ -168,29 +180,29 @@ void checkHitPlayer(float x, float y) {
             pthread_mutex_lock(&lock);
             draw_from_file(game_screen, bases[i].x, FRAME_HEIGHT - 6, "graphics/base", ERASE);
             pthread_mutex_unlock(&lock);
-            updateMissileCount();
+            update_missile_count();
         }
-        initMissileExplosion(round(x), round(y));
+        init_missile_explosion(round(x), round(y));
     }
 }
 
-void checkHitHostile(float x, float y) {
+void check_hit_hostile(float x, float y) {
     for (int i = 0; i < 10; i++) {
         if (hostile_missiles[i].live && fabsf(x - hostile_missiles[i].x) < 5 && fabsf(y - hostile_missiles[i].y) < 5) {
-            killMissile(&hostile_missiles[i]);
+            kill_missile(&hostile_missiles[i]);
             score += 25;
         }
-        initMissileExplosion(round(x), round(y));
+        init_missile_explosion(round(x), round(y));
     }
 }
 
-void *genHostileMissiles(void *arguments) {
+void gen_hostile_missiles() {
     int rand_target_type;
     int rand_target_x, rand_target_y;
     float dist;
     for (int i = 0; i < 8; i++) {
         if (i == 4) {
-            usleep(5000000);
+            sleep_add(5, 0);
         }
         rand_target_type = rand() % 2 - 1;
         if (rand_target_type) {
@@ -216,19 +228,18 @@ void *genHostileMissiles(void *arguments) {
         hostile_missiles[i].vel_x = (rand_target_x - hostile_missiles[i].x) / dist;
         hostile_missiles[i].vel_y = rand_target_y / dist;
     }
-    return NULL;
 }
 
-void subUpdateMissiles(struct missile *missiles, int missile_count) {
+void sub_update_missiles(struct missile *missiles, int missile_count) {
     for (int i = 0; i < missile_count; i++) {
         if (missiles[i].live) {
             if (fabsf(missiles[i].x - missiles[i].tar_x) < 1 && fabsf(missiles[i].y - missiles[i].tar_y) < 1) {
                 if (missiles[i].type == PLAYER) {
-                    checkHitHostile(missiles[i].x, missiles[i].y);
+                    check_hit_hostile(missiles[i].x, missiles[i].y);
                 } else {
-                    checkHitPlayer(missiles[i].x, missiles[i].y);
+                    check_hit_player(missiles[i].x, missiles[i].y);
                 }
-                killMissile(&missiles[i]);
+                kill_missile(&missiles[i]);
             } else {
                 missiles[i].old_x = missiles[i].x;
                 missiles[i].old_y = missiles[i].y;
@@ -264,25 +275,24 @@ void subUpdateMissiles(struct missile *missiles, int missile_count) {
     }
 }
 
-void *updateMissiles(void *arguments) {
+void update_missiles() {
     int counter = 0;
     while (game_live) {
-        usleep(100000);
+        sleep_add(0, 100000000);
         if (counter < 4) {
             counter++;
         } else {
             counter = 0;
         }
         if (!counter) {
-            subUpdateMissiles(hostile_missiles, 10);
+            sub_update_missiles(hostile_missiles, 10);
         }
-        subUpdateMissiles(player_missiles, 30);
+        sub_update_missiles(player_missiles, 30);
+        wrefresh(game_screen);
     }
-    return NULL;
 }
 
-void moveCursor(int *cur_x, int *cur_y, int new_x, int new_y) {
-    pthread_mutex_lock(&lock);
+void move_cursor(int *cur_x, int *cur_y, int new_x, int new_y) {
     wattron(game_screen, COLOR_PAIR(5));
     if ((mvwinch(game_screen, *cur_y, *cur_x) & A_CHARTEXT) != ('x' & A_CHARTEXT)) {
         mvwaddch(game_screen, *cur_y, *cur_x, ' ');
@@ -290,66 +300,77 @@ void moveCursor(int *cur_x, int *cur_y, int new_x, int new_y) {
     *cur_x = new_x;
     *cur_y = new_y;
     mvwaddch(game_screen, *cur_y, *cur_x, '+');
-    pthread_mutex_unlock(&lock);
+    wrefresh(game_screen);
 }
 
-void *inputListener(void *arguments) {
-    mousemask(ALL_MOUSE_EVENTS, NULL);
-    int input;
+void game_screen_input() {
     int cur_x = FRAME_WIDTH / 2;
     int cur_y = (FRAME_HEIGHT - 7) / 2;
     wattron(game_screen, COLOR_PAIR(5));
     mvwaddch(game_screen, cur_y, cur_x, '+');
-    //MEVENT event;
+    int input;
+    MEVENT event;
+    input_set_thread();
     while (game_live) {
+        input_set_thread();
         input = wgetch(game_screen);
         switch (input) {
-            /**case KEY_MOUSE:
+            case KEY_MOUSE:
                 if (getmouse(&event) == OK) {
                     if (event.x < FRAME_WIDTH && event.y < (FRAME_HEIGHT - 7)) {
-                        moveCursor(&cur_x, &cur_y, event.x, event.y);
+                        move_cursor(&cur_x, &cur_y, event.x, event.y);
                     }
                   }
                 break;
             case KEY_LEFT:
                 if (cur_x > 0) {
-                    moveCursor(&cur_x, &cur_y, cur_x - 1, cur_y);
+                    move_cursor(&cur_x, &cur_y, cur_x - 1, cur_y);
                 }
                 break;
             case KEY_RIGHT:
                 if (cur_x < FRAME_WIDTH - 1) {
-                    moveCursor(&cur_x, &cur_y, cur_x + 1, cur_y);
+                    move_cursor(&cur_x, &cur_y, cur_x + 1, cur_y);
                 }
                 break;
             case KEY_UP:
                 if (cur_y > 0) {
-                    moveCursor(&cur_x, &cur_y, cur_x, cur_y - 1);
+                    move_cursor(&cur_x, &cur_y, cur_x, cur_y - 1);
                 }
                 break;
             case KEY_DOWN:
                 if (cur_y < FRAME_HEIGHT - 7) {
-                    moveCursor(&cur_x, &cur_y, cur_x, cur_y + 1);
+                    move_cursor(&cur_x, &cur_y, cur_x, cur_y + 1);
                 }
                 break;
             case '1':
-                shootPlayerMissile(cur_x, cur_y, 0);
+                shoot_player_missile(cur_x, cur_y, 0);
                 break;
             case '2':
-                shootPlayerMissile(cur_x, cur_y, 1);
+                shoot_player_missile(cur_x, cur_y, 1);
                 break;
             case '3':
-                shootPlayerMissile(cur_x, cur_y, 2);
-                break;**/
+                shoot_player_missile(cur_x, cur_y, 2);
+                break;
             case 'q':
                 game_live = 0;
                 endwin();
+                exit(0);
                 break;
+            //default:
+                //sched_wakeup(game_thread);
         }
     }
-    return NULL;
 }
 
 void game() {
+    input_init();
+    signal(SIGUSR1, signal_dummy);
+    struct thread *input_handler = thread_create(&game_screen_input, NULL);
+    sched_wakeup(input_handler);
+
+    LARGE_STAGE_1 = file_to_string("graphics/explosion-large-stage-1");
+    LARGE_STAGE_2 = file_to_string("graphics/explosion-large-stage-2");
+
     game_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     game_live = 1;
     wattron(game_screen, A_BOLD);
@@ -369,22 +390,23 @@ void game() {
             .missile_count = 10
         };
     }
-    updateMissileCount();
+    update_missile_count();
 
-    pthread_t update_missiles_thread;
-    pthread_create(&update_missiles_thread, NULL, updateMissiles, NULL);
+    //pthread_t gen_hostile_missiles_thread;
+    //pthread_create(&gen_hostile_missiles_thread, NULL, gen_hostile_missiles, NULL);
+    struct thread *gen_hostile_missiles_thread = thread_create(&gen_hostile_missiles, NULL);
+    sched_wakeup(gen_hostile_missiles_thread);
 
-    pthread_t gen_hostile_missiles_thread;
-    pthread_create(&gen_hostile_missiles_thread, NULL, genHostileMissiles, NULL);
+    //pthread_t update_missiles_thread;
+    //pthread_create(&update_missiles_thread, NULL, update_missiles, NULL);
+    struct thread *update_missiles_thread = thread_create(&update_missiles, NULL);
+    sched_wakeup(update_missiles_thread);
 
-    pthread_t input_listener_thread;
-    pthread_create(&input_listener_thread, NULL, inputListener, NULL);
-
-    while (game_live) {
-        usleep(10000);
+    /**while (game_live) {
+        sleep_add(1, 0);
         pthread_mutex_lock(&lock);
         wrefresh(game_screen);
-        //refresh_high_score(game_screen);
+        refresh_high_score(game_screen);
         pthread_mutex_unlock(&lock);
-    }
+    }**/
 }

@@ -52,6 +52,10 @@ void *input_get(void *argument) {
     }
 }
 
+void signal_dummy() {
+    return;
+}
+
 void input_init() {
     pthread_mutex_init(&stop_read_input, NULL);
 
