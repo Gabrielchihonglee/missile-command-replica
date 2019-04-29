@@ -15,6 +15,9 @@
 #include <unistd.h>
 #include <time.h>
 #include <pthread.h>
+#include <signal.h>
+
+WINDOW *prep_screen;
 
 struct flashThreadArg {
     WINDOW *screen;
@@ -52,18 +55,66 @@ void flash_from_string() {
 }
 
 void temp_quit() {
+    int input;
     while (1) {
         input_set_thread();
-        exit(0);
+        input = wgetch(prep_screen);
+        switch (input) {
+            /**case KEY_MOUSE:
+                if (getmouse(&event) == OK) {
+                    if (event.x < FRAME_WIDTH && event.y < (FRAME_HEIGHT - 7)) {
+                        moveCursor(&cur_x, &cur_y, event.x, event.y);
+                    }
+                  }
+                break;
+            case KEY_LEFT:
+                if (cur_x > 0) {
+                    moveCursor(&cur_x, &cur_y, cur_x - 1, cur_y);
+                }
+                break;
+            case KEY_RIGHT:
+                if (cur_x < FRAME_WIDTH - 1) {
+                    moveCursor(&cur_x, &cur_y, cur_x + 1, cur_y);
+                }
+                break;
+            case KEY_UP:
+                if (cur_y > 0) {
+                    moveCursor(&cur_x, &cur_y, cur_x, cur_y - 1);
+                }
+                break;
+            case KEY_DOWN:
+                if (cur_y < FRAME_HEIGHT - 7) {
+                    moveCursor(&cur_x, &cur_y, cur_x, cur_y + 1);
+                }
+                break;
+            case '1':
+                shootPlayerMissile(cur_x, cur_y, 0);
+                break;
+            case '2':
+                shootPlayerMissile(cur_x, cur_y, 1);
+                break;
+            case '3':
+                shootPlayerMissile(cur_x, cur_y, 2);
+                break;**/
+            case 'q':
+                endwin();
+                exit(0);
+                break;
+        }
     }
+}
+
+void signal_dummy() {
+    return;
 }
 
 void prep() {
     input_init();
+    signal(SIGUSR1, signal_dummy);
     struct thread *input_handler = thread_create(&temp_quit, NULL);
     sched_wakeup(input_handler);
 
-    WINDOW *prep_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
+    prep_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(prep_screen, A_BOLD);
     noecho();
     draw_screen_settings(prep_screen, 0);
