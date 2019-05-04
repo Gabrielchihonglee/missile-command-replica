@@ -155,7 +155,6 @@ void carousel_from_string() {
     wrefresh(carousel_thread_screen);
     int carousel_thread_head_x = carousel_thread_start_x;
     while (carousel_thread_live) {
-        pthread_mutex_lock(&lock);
         for (int i = 0; i < (FRAME_WIDTH - 1 - carousel_thread_head_x) && i < strlen(carousel_thread_text); i++) {
             if ((carousel_thread_head_x + i) < carousel_thread_end_x)
                 continue;
@@ -166,7 +165,6 @@ void carousel_from_string() {
             wattron(carousel_thread_screen, COLOR_PAIR(carousel_thread_color_pair));
             mvwaddch(carousel_thread_screen, carousel_thread_y, carousel_thread_head_x + strlen(carousel_thread_text), ' ');
         }
-        pthread_mutex_unlock(&lock);
         wrefresh(carousel_thread_screen);
         sleep_add(0, 100000000);
         carousel_thread_head_x--;
@@ -176,7 +174,6 @@ void carousel_from_string() {
 }
 
 void draw_screen_settings(WINDOW *screen, int cities_only) {
-    pthread_mutex_lock(&lock);
     if (!cities_only) {
         wattron(screen, COLOR_PAIR(84));
         draw_from_file(screen, 0, FRAME_HEIGHT - 3, "graphics/ground", ERASE);
@@ -192,5 +189,4 @@ void draw_screen_settings(WINDOW *screen, int cities_only) {
         wattron(screen, COLOR_PAIR(5));
         draw_from_file(screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-2", DRAW);
     }
-    pthread_mutex_unlock(&lock);
 }

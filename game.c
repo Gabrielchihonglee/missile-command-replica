@@ -122,13 +122,10 @@ void kill_missile(void *missile_input) {
 
 void update_missile_explosion(void *arguments) {
     struct missileExplosionThreadArg *args = arguments;
-    //usleep(10000);
     sleep_add(0, 100000000);
     draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_1, DRAW);
-    //usleep(10000);
     sleep_add(0, 100000000);
     draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_2, DRAW);
-    //usleep(10000);
     sleep_add(0, 100000000);
     draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_2, ERASE);
 
