@@ -46,7 +46,7 @@ void *input_get(void *argument) {
             sched_wakeup(input_thread);
             pthread_mutex_lock(&in_sleep);
             syscall(SYS_tgkill, getpid(), getpid(), SIGUSR1);
-            input_thread = NULL;
+            input_thread->state = STATE_IDLE;
             pthread_mutex_unlock(&in_sleep);
         }
     }
