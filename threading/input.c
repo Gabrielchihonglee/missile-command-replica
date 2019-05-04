@@ -37,7 +37,7 @@ void input_set_thread() {
 void *input_get(void *argument) {
     while (1) {
         pthread_mutex_lock(&stop_read_input);
-        if (input_thread) {
+        if (input_thread && input_thread->state != STATE_END) {
             fd_set rfds;
             FD_ZERO(&rfds);
             FD_SET(0, &rfds);
@@ -46,7 +46,7 @@ void *input_get(void *argument) {
             sched_wakeup(input_thread);
             pthread_mutex_lock(&in_sleep);
             syscall(SYS_tgkill, getpid(), getpid(), SIGUSR1);
-            input_thread->state = STATE_IDLE;
+            input_thread->state = STATE_END;
             pthread_mutex_unlock(&in_sleep);
         }
     }

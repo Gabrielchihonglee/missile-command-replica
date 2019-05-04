@@ -211,11 +211,10 @@ void sub_update_missiles(struct missile *missiles, int missile_count) {
     for (int i = 0; i < missile_count; i++) {
         if (missiles[i].live) {
             if (fabsf(missiles[i].x - missiles[i].tar_x) < 1 && fabsf(missiles[i].y - missiles[i].tar_y) < 1) {
-                if (missiles[i].type == PLAYER) {
+                if (missiles[i].type == PLAYER)
                     check_hit_hostile(missiles[i].x, missiles[i].y);
-                } else {
+                else
                     check_hit_player(missiles[i].x, missiles[i].y);
-                }
                 kill_missile(&missiles[i]);
             } else {
                 missiles[i].old_x = missiles[i].x;
@@ -224,24 +223,20 @@ void sub_update_missiles(struct missile *missiles, int missile_count) {
                 missiles[i].y += missiles[i].vel_y;
                 if (missiles[i].type == PLAYER) {
                     wattron(game_screen, COLOR_PAIR(5));
-                    if (round(missiles[i].vel_x) > 0) {
+                    if (round(missiles[i].vel_x) > 0)
                         mvwaddch(game_screen, round(missiles[i].old_y), round(missiles[i].old_x), '/');
-                    }
-                    else if (round(player_missiles[i].vel_x) < 0) {
+                    else if (round(player_missiles[i].vel_x) < 0)
                         mvwaddch(game_screen, round(missiles[i].old_y), round(missiles[i].old_x), '\\');
-                    } else {
+                    else
                         mvwaddch(game_screen, round(missiles[i].old_y), round(missiles[i].old_x), '|');
-                    }
                 } else {
                     wattron(game_screen, COLOR_PAIR(2));
-                    if (round(missiles[i].vel_x) > 0) {
+                    if (round(missiles[i].vel_x) > 0)
                         mvwaddch(game_screen, round(missiles[i].old_y), round(missiles[i].old_x), '\\');
-                    }
-                    else if (round(missiles[i].vel_x) < 0) {
+                    else if (round(missiles[i].vel_x) < 0)
                         mvwaddch(game_screen, round(missiles[i].old_y), round(missiles[i].old_x), '/');
-                    } else {
+                    else
                         mvwaddch(game_screen, round(missiles[i].old_y), round(missiles[i].old_x), '|');
-                    }
                 }
                 wattron(game_screen, COLOR_PAIR(8));
                 mvwaddch(game_screen, round(missiles[i].y), round(missiles[i].x), '.');
@@ -254,14 +249,12 @@ void update_missiles() {
     int counter = 0;
     while (game_live) {
         sleep_add(0, 100000000);
-        if (counter < 4) {
+        if (counter < 4)
             counter++;
-        } else {
+        else
             counter = 0;
-        }
-        if (!counter) {
+        if (!counter)
             sub_update_missiles(hostile_missiles, 10);
-        }
         sub_update_missiles(player_missiles, 30);
         wrefresh(game_screen);
     }
