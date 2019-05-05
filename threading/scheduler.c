@@ -30,8 +30,11 @@ void sched_wakeup_no_check(struct thread *thread) {
 }
 
 void sched_wakeup(struct thread *thread) {
-    if (thread != current_thread && !list_contains(&thread_queue, thread))
-        sched_wakeup_no_check(thread);
+    if (thread == current_thread && list_contains(&thread_queue, thread)) {
+        current_thread->wakeup = true;
+        return;
+    }
+    sched_wakeup_no_check(thread);
 }
 
 void swap_to(struct thread *thread) {
@@ -47,8 +50,10 @@ void swap_to(struct thread *thread) {
 
 void schedule() {
     pthread_mutex_lock(&sched_queue_lock);
-    if (current_thread != main_thread && current_thread->state == STATE_RUNNING)
+    if (current_thread != main_thread && (current_thread->state == STATE_RUNNING || current_thread->wakeup)) {
         push_item_back(&thread_queue, current_thread);
+        current_thread->wakeup = false;
+    }
     if (!thread_queue)
         swap_to(main_thread);
     else

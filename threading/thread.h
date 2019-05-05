@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <ucontext.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 enum thread_state {STATE_RUNNING, STATE_IDLE, STATE_END};
 
@@ -12,6 +13,7 @@ struct thread {
     unsigned int id;
     ucontext_t context;
     enum thread_state state;
+    bool wakeup;
 };
 
 /**

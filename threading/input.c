@@ -28,25 +28,26 @@ sigset_t mask;
 sigset_t old_mask;
 
 void input_set_thread() {
-    pthread_mutex_unlock(&stop_read_input);
     input_thread = current_thread;
-    input_thread->state = STATE_IDLE;
+    pthread_mutex_unlock(&stop_read_input);
+    current_thread->state = STATE_IDLE;
     schedule();
+    current_thread->state = STATE_RUNNING;
 }
 
 void *input_get(void *argument) {
     while (1) {
         pthread_mutex_lock(&stop_read_input);
-        if (input_thread && input_thread->state != STATE_END) {
+        if (input_thread) {
             fd_set rfds;
             FD_ZERO(&rfds);
             FD_SET(0, &rfds);
             select(1, &rfds, NULL, NULL, NULL);
 
             sched_wakeup(input_thread);
+            input_thread = NULL;
             pthread_mutex_lock(&in_sleep);
             syscall(SYS_tgkill, getpid(), getpid(), SIGUSR1);
-            input_thread->state = STATE_END;
             pthread_mutex_unlock(&in_sleep);
         }
     }
