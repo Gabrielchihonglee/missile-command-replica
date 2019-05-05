@@ -39,30 +39,30 @@ static int flash_thread_color_pair;
 struct thread *game_thread;
 
 void flash_from_string() {
-    while (flash_thread_live) {
-        wattron(flash_thread_screen, COLOR_PAIR(flash_thread_color_pair));
-        mvwprintw(flash_thread_screen, flash_thread_y, flash_thread_x, flash_thread_text);
-        wrefresh(flash_thread_screen);
-        if (!flash_thread_live)
+    while (string_flash_arg->live) {
+        wattron(string_flash_arg->screen, COLOR_PAIR(string_flash_arg->color_pair));
+        mvwprintw(string_flash_arg->screen, string_flash_arg->y, string_flash_arg->x, string_flash_arg->text);
+        wrefresh(string_flash_arg->screen);
+        if (!string_flash_arg->live)
             break;
-        sleep_add(0, flash_thread_duration / 2 * 1000);
-        wattron(flash_thread_screen, COLOR_PAIR(flash_thread_color_pair));
-        for (int i = 0; i < strlen(flash_thread_text) - 1; i++) {
-            mvwprintw(flash_thread_screen, flash_thread_y, flash_thread_x + i, " ");
-            wrefresh(flash_thread_screen);
+        sleep_add(0, string_flash_arg->duration / 2 * 1000);
+        wattron(string_flash_arg->screen, COLOR_PAIR(string_flash_arg->color_pair));
+        for (int i = 0; i < strlen(string_flash_arg->text) - 1; i++) {
+            mvwprintw(string_flash_arg->screen, string_flash_arg->y, string_flash_arg->x + i, " ");
+            wrefresh(string_flash_arg->screen);
         }
-        if (!flash_thread_live)
+        if (!string_flash_arg->live)
             break;
-        sleep_add(0, flash_thread_duration / 2 * 1000);
+        sleep_add(0, string_flash_arg->duration / 2 * 1000);
     }
+    free(string_flash_arg);
 }
 
 void prep_screen_input() {
     int input;
     input_set_thread();
     input = wgetch(prep_screen);
-    flash_thread_live = 0;
-    free(string_flash_arg);
+    string_flash_arg->live = 0;
     carousel_thread_live = 0;
     switch (input) {
         case 'q':
@@ -96,14 +96,19 @@ void prep() {
     for (int i = 0; i < 6; i++) {
         prep_screen_arrow_string[cities_x_pos[i] + 3] = 'V';
     }
+
     prep_screen_arrow_string[FRAME_WIDTH - 1] = '\0';
-    flash_thread_screen = prep_screen;
-    flash_thread_live = 1;
-    flash_thread_x = 0;
-    flash_thread_y = FRAME_HEIGHT - 7;
-    flash_thread_text = prep_screen_arrow_string;
-    flash_thread_duration = 1200000;
-    flash_thread_color_pair = 2;
+
+    string_flash_arg = malloc(sizeof(string_flash_arg));
+    *string_flash_arg = (struct string_flash_arg) {
+        .screen = prep_screen,
+        .live = 1,
+        .x = 0,
+        .y = FRAME_HEIGHT - 7,
+        .text = prep_screen_arrow_string,
+        .duration = 1200000,
+        .color_pair = 2,
+    };
     struct thread *prep_screen_arrow_thread = thread_create(&flash_from_string, NULL);
     sched_wakeup(prep_screen_arrow_thread);
 
