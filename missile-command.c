@@ -17,10 +17,13 @@
 #include <unistd.h>
 #include <time.h>
 #include <pthread.h>
+#include <signal.h>
 
 int main() {
     pthread_mutex_init(&in_sleep, NULL);
     sched_init();
+    input_init();
+    signal(SIGUSR1, signal_dummy);
 
     srand(time(0));
     initscr();

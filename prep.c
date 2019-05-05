@@ -20,14 +20,14 @@
 
 WINDOW *prep_screen;
 
-struct flashThreadArg {
+struct string_flash_arg {
     WINDOW *screen;
     int live;
     int x, y;
     char *text;
     int duration;
     int color_pair;
-};
+} *string_flash_arg;
 
 static WINDOW *flash_thread_screen;
 static int flash_thread_live;
@@ -62,6 +62,7 @@ void prep_screen_input() {
     input_set_thread();
     input = wgetch(prep_screen);
     flash_thread_live = 0;
+    free(string_flash_arg);
     carousel_thread_live = 0;
     switch (input) {
         case 'q':
@@ -74,8 +75,6 @@ void prep_screen_input() {
 }
 
 void prep() {
-    input_init();
-    signal(SIGUSR1, signal_dummy);
     struct thread *input_handler = thread_create(&prep_screen_input, NULL);
     sched_wakeup(input_handler);
 

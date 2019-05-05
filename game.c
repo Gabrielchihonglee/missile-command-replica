@@ -331,8 +331,6 @@ void game_screen_input() {
 }
 
 void game() {
-    input_init();
-    signal(SIGUSR1, signal_dummy);
     struct thread *input_handler = thread_create(&game_screen_input, NULL);
     sched_wakeup(input_handler);
 
