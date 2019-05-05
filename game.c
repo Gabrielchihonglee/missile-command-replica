@@ -47,6 +47,7 @@ struct city {
 struct base {
     int x, y;
     int missile_count;
+    int live;
 } bases[3];
 
 static WINDOW *game_screen;
@@ -156,6 +157,7 @@ void check_hit_player(float x, float y) {
     for (int i = 0; i < 3; i++) {
         if ((x >= bases[i].x) && (x <= (bases[i].x + 7))) {
             bases[i].missile_count = 0;
+            bases[i].live = 0;
             draw_from_file(game_screen, bases[i].x, FRAME_HEIGHT - 6, "graphics/base", ERASE);
             update_missile_count();
         }
@@ -245,16 +247,45 @@ void sub_update_missiles(struct missile *missiles, int missile_count) {
     }
 }
 
+void check_end_missiles() {
+    int live_count = 0;
+    for (int i = 0; i < 10; i++) {
+        if (hostile_missiles[i].live)
+            live_count++;
+    }
+    if (live_count == 0) {
+        sleep_add(1, 0);
+        exit(0);
+        //next_level();
+    }
+}
+
+void check_end_bases() {
+    int live_count = 0;
+    for (int i = 0; i < 3; i++) {
+        if (bases[i].live)
+            live_count++;
+    }
+    if (live_count == 0) {
+        sleep_add(1, 0);
+        exit(0);
+    }
+}
+
 void update_missiles() {
     int counter = 0;
     while (game_live) {
-        sleep_add(0, 100000000);
+        sleep_add(0, 40000000);
+        //sleep_add(0, 100000000);
         if (counter < 4)
             counter++;
         else
             counter = 0;
-        if (!counter)
+        if (!counter) {
             sub_update_missiles(hostile_missiles, 10);
+            check_end_missiles();
+            check_end_bases();
+        }
         sub_update_missiles(player_missiles, 30);
         wrefresh(game_screen);
     }
@@ -353,7 +384,8 @@ void game() {
         bases[i] = (struct base) {
             .x = bases_x_pos[i],
             .y = FRAME_HEIGHT - 6,
-            .missile_count = 10
+            .missile_count = 10,
+            .live = 1
         };
     }
     update_missile_count();

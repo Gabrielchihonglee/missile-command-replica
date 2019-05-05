@@ -14,6 +14,7 @@ struct thread {
     ucontext_t context;
     enum thread_state state;
     bool wakeup;
+    bool should_exit;
 };
 
 /**

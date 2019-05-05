@@ -11,6 +11,21 @@
 #define START_PADDING_HORIZONTAL 30
 #define START_PADDING_VERTICAL 12
 
+struct string_flash_arg {
+    WINDOW *screen;
+    int x, y;
+    char *text;
+    int duration;
+    int color_pair;
+};
+
+struct carousel_arg {
+    WINDOW *screen;
+    int start_x, end_x, y;
+    char *text;
+    int color_pair;
+};
+
 extern pthread_mutex_t lock;
 
 extern int start_explosion_pos[80][2];
@@ -19,12 +34,6 @@ extern int cities_x_pos[6];
 extern int bases_x_pos[3];
 
 enum drawMode {ERASE, DRAW};
-
-extern WINDOW *carousel_thread_screen;
-extern int carousel_thread_live;
-extern int carousel_thread_start_x, carousel_thread_end_x, carousel_thread_y;
-extern char *carousel_thread_text;
-extern int carousel_thread_color_pair;
 
 extern int score;
 extern int high_score;

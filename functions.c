@@ -11,14 +11,6 @@
 #include <time.h>
 #include <pthread.h>
 
-struct carouselThreadArg {
-    WINDOW *screen;
-    int live;
-    int start_x, end_x, y;
-    char *text;
-    int color_pair;
-};
-
 pthread_mutex_t lock;
 
 int start_explosion_pos[80][2];
@@ -27,12 +19,6 @@ int cities_x_pos[6] = {15, 30, 45, 70, 85, 100};
 int bases_x_pos[3] = {1, 56, 112};
 
 //enum drawMode {ERASE, DRAW};
-
-WINDOW *carousel_thread_screen;
-int carousel_thread_live;
-int carousel_thread_start_x, carousel_thread_end_x, carousel_thread_y;
-char *carousel_thread_text;
-int carousel_thread_color_pair;
 
 int score = 0;
 int high_score = 0;
@@ -151,25 +137,26 @@ void refresh_high_score(WINDOW *screen) {
     mvwprintw(screen, 0, FRAME_WIDTH / 2 - 15, score_text);
 }
 
-void carousel_from_string() {
-    wrefresh(carousel_thread_screen);
-    int carousel_thread_head_x = carousel_thread_start_x;
-    while (carousel_thread_live) {
-        for (int i = 0; i < (FRAME_WIDTH - 1 - carousel_thread_head_x) && i < strlen(carousel_thread_text); i++) {
-            if ((carousel_thread_head_x + i) < carousel_thread_end_x)
+void carousel_from_string(void *arg) {
+    struct carousel_arg *carousel_arg = arg;
+    wrefresh(carousel_arg->screen);
+    int head_x = carousel_arg->start_x;
+    while (!current_thread->should_exit) {
+        for (int i = 0; i < (FRAME_WIDTH - 1 - head_x) && i < strlen(carousel_arg->text); i++) {
+            if ((head_x + i) < carousel_arg->end_x)
                 continue;
-            wattron(carousel_thread_screen, COLOR_PAIR(carousel_thread_color_pair));
-            mvwaddch(carousel_thread_screen, carousel_thread_y, carousel_thread_head_x + i, carousel_thread_text[i]);
+            wattron(carousel_arg->screen, COLOR_PAIR(carousel_arg->color_pair));
+            mvwaddch(carousel_arg->screen, carousel_arg->y, head_x + i, carousel_arg->text[i]);
         }
-        if ((carousel_thread_head_x + strlen(carousel_thread_text)) < (FRAME_WIDTH - 1)) {
-            wattron(carousel_thread_screen, COLOR_PAIR(carousel_thread_color_pair));
-            mvwaddch(carousel_thread_screen, carousel_thread_y, carousel_thread_head_x + strlen(carousel_thread_text), ' ');
+        if ((head_x + strlen(carousel_arg->text)) < (FRAME_WIDTH - 1)) {
+            wattron(carousel_arg->screen, COLOR_PAIR(carousel_arg->color_pair));
+            mvwaddch(carousel_arg->screen, carousel_arg->y, head_x + strlen(carousel_arg->text), ' ');
         }
-        wrefresh(carousel_thread_screen);
+        wrefresh(carousel_arg->screen);
         sleep_add(0, 100000000);
-        carousel_thread_head_x--;
-        if (carousel_thread_head_x + strlen(carousel_thread_text) + 1 <= carousel_thread_end_x)
-            carousel_thread_head_x = carousel_thread_start_x;
+        head_x--;
+        if (head_x + strlen(carousel_arg->text) + 1 <= carousel_arg->end_x)
+            head_x = carousel_arg->start_x;
     }
 }
 
