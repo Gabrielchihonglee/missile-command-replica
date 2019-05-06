@@ -2,6 +2,7 @@
 #include "start.h"
 #include "prep.h"
 #include "game.h"
+#include "end.h"
 
 #include "threading/list.h"
 #include "threading/thread.h"
@@ -45,7 +46,7 @@ int main() {
     init_pair(48, COLOR_YELLOW, COLOR_WHITE);
     init_pair(84, COLOR_WHITE, COLOR_YELLOW);
 
-    struct thread *start_thread = thread_create(&start, NULL);
+    struct thread *start_thread = thread_create(&end, NULL);
     sched_wakeup(start_thread);
 
     //prep();

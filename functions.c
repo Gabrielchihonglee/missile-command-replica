@@ -23,6 +23,12 @@ int bases_x_pos[3] = {1, 56, 112};
 int score = 0;
 int high_score = 0;
 
+void draw_fill(WINDOW *screen) {
+    for (int i = 0; i < FRAME_HEIGHT; i++)
+        for (int j = 0; j < FRAME_WIDTH; j++)
+            mvwaddch(screen, i, j, ACS_CKBOARD);
+}
+
 void draw_from_file(WINDOW *screen, int start_x, int start_y, char file[], enum drawMode mode) { // mode 1: draw 0: erase/draw with backgound
     FILE *fp = fopen(file, "r");
     char symbol;

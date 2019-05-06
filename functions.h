@@ -38,6 +38,8 @@ enum drawMode {ERASE, DRAW};
 extern int score;
 extern int high_score;
 
+void draw_fill(WINDOW *screen);
+
 void draw_from_file(WINDOW *screen, int start_x, int start_y, char file[], enum drawMode mode);
 
 void draw_from_string(WINDOW *screen, int start_x, int start_y, char *line, enum drawMode mode);
