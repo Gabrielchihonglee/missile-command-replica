@@ -99,32 +99,6 @@ void end() {
     wattron(end_screen, A_BOLD);
     wattron(end_screen, COLOR_PAIR(4));
 
-    wgetch(end_screen);
-/**
-    mvwaddch(end_screen, center_y, center_x, '@');
-    wrefresh(end_screen);
-    sleep_add(0, 100000000);
-
-    print_edge(end_screen, 1, 2);
-    print_edge(end_screen, 2, 3);
-    print_edge(end_screen, 3, 4);
-    print_edge(end_screen, 4, 5);
-    print_edge(end_screen, 5, 6);
-    print_edge(end_screen, 6, 7);
-    print_edge(end_screen, 7, 8);
-    print_edge(end_screen, 8, 1);
-
-    wattron(end_screen, COLOR_PAIR(2));
-    print_vertex(end_screen, 1);
-    print_vertex(end_screen, 2);
-    print_vertex(end_screen, 3);
-    print_vertex(end_screen, 4);
-    print_vertex(end_screen, 5);
-    print_vertex(end_screen, 6);
-    print_vertex(end_screen, 7);
-    print_vertex(end_screen, 8);
-**/
-
     char *the_end_text = file_to_string("graphics/the-end-text");
 
     for (int i = 2; i < (FRAME_HEIGHT - 2); i++) {
@@ -152,9 +126,6 @@ void end() {
         wrefresh(end_screen);
         sleep_add(0, 80000000);
     }
-
-    //sleep_add(2, 0);
-    wgetch(end_screen);
 
     endwin();
     exit(0);

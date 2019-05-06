@@ -1,4 +1,5 @@
 #include "game.h"
+#include "end.h"
 #include "functions.h"
 
 #include "threading/list.h"
@@ -54,6 +55,7 @@ static WINDOW *game_screen;
 static int game_live = 0;
 static struct missile hostile_missiles[10] = {0};
 static struct missile player_missiles[45] = {0};
+static int level = 1;
 
 char *STAGE_1, *STAGE_2;
 char *LARGE_STAGE_1, *LARGE_STAGE_2;
@@ -247,6 +249,11 @@ void sub_update_missiles(struct missile *missiles, int missile_count) {
     }
 }
 
+void next_level() {
+    level++;
+    sched_wakeup(thread_create(&game, NULL));
+}
+
 void check_end_missiles() {
     int live_count = 0;
     for (int i = 0; i < 10; i++) {
@@ -255,8 +262,10 @@ void check_end_missiles() {
     }
     if (live_count == 0) {
         sleep_add(1, 0);
-        exit(0);
-        //next_level();
+        game_live = 0;
+        endwin();
+        //exit(0);
+        next_level();
     }
 }
 
@@ -268,14 +277,16 @@ void check_end_bases() {
     }
     if (live_count == 0) {
         sleep_add(1, 0);
-        exit(0);
+        game_live = 0;
+        endwin();
+        end();
     }
 }
 
 void update_missiles() {
     int counter = 0;
     while (game_live) {
-        sleep_add(0, 40000000);
+        sleep_add(0, 60000000 - 1000000 * level);
         //sleep_add(0, 100000000);
         if (counter < 4)
             counter++;
@@ -283,10 +294,10 @@ void update_missiles() {
             counter = 0;
         if (!counter) {
             sub_update_missiles(hostile_missiles, 10);
-            check_end_missiles();
             check_end_bases();
+            check_end_missiles();
         }
-        sub_update_missiles(player_missiles, 30);
+        sub_update_missiles(player_missiles, 45);
         wrefresh(game_screen);
     }
 }

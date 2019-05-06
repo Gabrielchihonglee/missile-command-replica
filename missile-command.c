@@ -46,7 +46,7 @@ int main() {
     init_pair(48, COLOR_YELLOW, COLOR_WHITE);
     init_pair(84, COLOR_WHITE, COLOR_YELLOW);
 
-    struct thread *start_thread = thread_create(&end, NULL);
+    struct thread *start_thread = thread_create(&start, NULL);
     sched_wakeup(start_thread);
 
     //prep();
