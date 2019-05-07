@@ -40,11 +40,6 @@ struct hostileMissilesThreadArg {
     struct missile *player_missiles;
 };
 
-struct city {
-    int x, y;
-    int live;
-} cities[6];
-
 struct base {
     int x, y;
     int missile_count;
@@ -439,9 +434,6 @@ void game() {
     //werase(main_screen);
     //erase();
 
-    draw_screen_settings(game_screen, 0);
-    wrefresh(game_screen);
-
     for (int i = 0; i < 3; i++) {
         bases[i] = (struct base) {
             .x = bases_x_pos[i],
@@ -450,15 +442,20 @@ void game() {
             .live = 1
         };
     }
-    update_missile_count();
 
     for (int i = 0; i < 6; i++) {
+        if (level != 1)
+            break;
         cities[i] = (struct city) {
             .x = cities_x_pos[i],
             .y = FRAME_HEIGHT - 4,
             .live = 1
         };
     }
+
+    draw_screen_settings(game_screen, 0, cities);
+    update_missile_count();
+    wrefresh(game_screen);
 
     sched_wakeup(thread_create(&gen_hostile_missiles, NULL));
     sched_wakeup(thread_create(&game_loop, NULL));

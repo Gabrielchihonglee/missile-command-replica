@@ -188,7 +188,7 @@ void carousel_from_string(void *arg) {
     }
 }
 
-void draw_screen_settings(WINDOW *screen, int cities_only) {
+void draw_screen_settings(WINDOW *screen, int cities_only, struct city cities[6]) {
     if (!cities_only) {
         wattron(screen, COLOR_PAIR(84));
         draw_from_file(screen, 0, FRAME_HEIGHT - 3, "graphics/ground", ERASE);
@@ -197,7 +197,7 @@ void draw_screen_settings(WINDOW *screen, int cities_only) {
             draw_from_file(screen, bases_x_pos[i], FRAME_HEIGHT - 6, "graphics/base", ERASE);
     }
     for (int i = 0; i < 6; i++) {
-        if (cities_x_pos[i] == -1)
+        if (!cities[i].live)
             continue;
         wattron(screen, COLOR_PAIR(3));
         draw_from_file(screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-1", DRAW);

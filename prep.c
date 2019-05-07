@@ -68,7 +68,9 @@ void prep() {
     prep_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(prep_screen, A_BOLD);
     noecho();
-    draw_screen_settings(prep_screen, 0);
+    for (int i = 0; i < 6; i++)
+        cities[i].live = 1;
+    draw_screen_settings(prep_screen, 0, cities);
     wattron(prep_screen, COLOR_PAIR(5));
     draw_from_file(prep_screen, 18, FRAME_HEIGHT - 15, "graphics/defend-text", DRAW);
     draw_from_file(prep_screen, 72, FRAME_HEIGHT - 15, "graphics/cities-text", DRAW);

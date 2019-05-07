@@ -26,6 +26,11 @@ struct carousel_arg {
     int color_pair;
 };
 
+struct city {
+    int x, y;
+    int live;
+} cities[6];
+
 extern pthread_mutex_t lock;
 
 extern int start_explosion_pos[80][2];
@@ -54,6 +59,6 @@ void refresh_high_score(WINDOW *screen);
 
 void carousel_from_string();
 
-void draw_screen_settings(WINDOW *screen, int cities_only);
+void draw_screen_settings(WINDOW *screen, int cities_only, struct city cities[6]);
 
 #endif
