@@ -1,4 +1,5 @@
 *.o
 /
+.highscore
 missile-command
 threading/threading

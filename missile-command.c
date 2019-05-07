@@ -3,6 +3,7 @@
 #include "prep.h"
 #include "game.h"
 #include "end.h"
+#include "highscore.h"
 
 #include "threading/list.h"
 #include "threading/thread.h"
@@ -45,6 +46,17 @@ int main() {
 
     init_pair(48, COLOR_YELLOW, COLOR_WHITE);
     init_pair(84, COLOR_WHITE, COLOR_YELLOW);
+
+    FILE *highscore_file = fopen(".highscore", "r");
+    char entry[13];
+    char temp[6];
+    char high_score_text[6];
+    if (highscore_file) {
+        fgets(entry, sizeof(entry), highscore_file);
+        sscanf(entry, "%s %s", temp, high_score_text);
+        fclose(highscore_file);
+    }
+    high_score = atoi(high_score_text);
 
     struct thread *start_thread = thread_create(&start, NULL);
     sched_wakeup(start_thread);
