@@ -323,6 +323,8 @@ void check_end_cities() {
     if (live_count == 0) {
         sleep_add(1, 0);
         game_live = 0;
+        bonus_points();
+        sleep_add(1, 0);
         endwin();
         end();
     }

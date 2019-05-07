@@ -1,4 +1,5 @@
 #include "functions.h"
+#include "highscore.h"
 
 #include "threading/list.h"
 #include "threading/thread.h"
@@ -128,5 +129,6 @@ void end() {
     }
 
     endwin();
-    exit(0);
+
+    highscore();
 }
