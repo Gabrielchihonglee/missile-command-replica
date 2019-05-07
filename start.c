@@ -1,8 +1,7 @@
 #include "start.h"
-#include "prep.h"
 #include "functions.h"
+#include "prep.h"
 
-#include "threading/list.h"
 #include "threading/thread.h"
 #include "threading/input.h"
 #include "threading/scheduler.h"
@@ -10,13 +9,8 @@
 
 #include <ncurses.h>
 #include <string.h>
-#include <stdlib.h>
-#include <math.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <time.h>
-#include <pthread.h>
 
+// changes the color of the text "MISSILE COMMAND"
 void start_screen_text_color(WINDOW *screen, int color) {
     wattron(screen, COLOR_PAIR(color));
     for (int i = START_PADDING_VERTICAL; i < (16 + START_PADDING_VERTICAL); i++)
@@ -35,37 +29,27 @@ void start() {
     wrefresh(start_screen);
     sleep_add(1, 0);
 
+    // setup explosion position
     for (int i = 0; i < 80; i++) {
-        if (i % 3 == 0) {
+        if (!i % 3) { // 1 in 3 will explode without boundaries
             start_explosion_pos[i][0] = rand() % (FRAME_WIDTH - 3);
             start_explosion_pos[i][1] = rand() % (FRAME_HEIGHT - 3);
-        } else {
+        } else { // 2 in 3 will explode on the "MISSILE COMMAND" text
             start_explosion_pos[i][0] = rand() % 63 + START_PADDING_HORIZONTAL - 2;
             start_explosion_pos[i][1] = rand() % 16 + START_PADDING_VERTICAL - 2;
         }
     }
 
+    // setup the "shape" for the explosions
     STAGE_1 = file_to_string("graphics/explosion-small-stage-1");
     STAGE_2 = file_to_string("graphics/explosion-small-stage-2");
 
-    for (int i = 0; i < 3; i++) {
-        update_small_explosion_stage(start_screen, 0, 10, 4);
-        start_screen_text_color(start_screen, 3);
-        update_small_explosion_stage(start_screen, 10, 20, 5);
-        start_screen_text_color(start_screen, 4);
-        update_small_explosion_stage(start_screen, 20, 30, 6);
-        start_screen_text_color(start_screen, 5);
-        update_small_explosion_stage(start_screen, 30, 40, 7);
-        start_screen_text_color(start_screen, 6);
-        update_small_explosion_stage(start_screen, 40, 50, 8);
-        start_screen_text_color(start_screen, 7);
-        update_small_explosion_stage(start_screen, 50, 60, 1);
-        start_screen_text_color(start_screen, 8);
-        update_small_explosion_stage(start_screen, 60, 70, 2);
-        start_screen_text_color(start_screen, 1);
-        update_small_explosion_stage(start_screen, 70, 80, 3);
-        start_screen_text_color(start_screen, 2);
-    }
+    // start explosion
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 8; j++) {
+            update_small_explosion_stage(start_screen, j * 10, j * 10 + 10, rand() % 8); // explodes 10 at a time
+            start_screen_text_color(start_screen, rand() % 8);
+        }
 
     sleep_add(1, 0);
     wattron(start_screen, COLOR_PAIR(8));
@@ -74,6 +58,6 @@ void start() {
     werase(start_screen);
     delwin(start_screen);
 
-    struct thread *prep_thread = thread_create(&prep, NULL);
-    sched_wakeup(prep_thread);
+    // run stage prep
+    sched_wakeup(thread_create(&prep, NULL));
 }

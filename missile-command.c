@@ -48,7 +48,7 @@ int main() {
     }
     high_score = atoi(high_score_text);
 
-    // start game
+    // run stage start
     struct thread *start_thread = thread_create(&start, NULL);
     sched_wakeup(start_thread);
 

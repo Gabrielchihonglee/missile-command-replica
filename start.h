@@ -3,8 +3,9 @@
 
 #include <ncurses.h>
 
-void start_screen_text_color(WINDOW *screen, int color);
-
+/**
+* Executes the start stage of the game.
+*/
 void start();
 
 #endif
