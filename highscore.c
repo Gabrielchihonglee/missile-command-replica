@@ -20,8 +20,6 @@ void draw_highscore_background(WINDOW *screen) {
 }
 
 void highscore() {
-    score = 1200;
-
     WINDOW *score_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(score_screen, A_BOLD);
     wattron(score_screen, COLOR_PAIR(4));

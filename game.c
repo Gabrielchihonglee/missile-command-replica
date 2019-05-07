@@ -121,10 +121,13 @@ void kill_missile(void *missile_input) {
 void update_missile_explosion(void *arguments) {
     struct missileExplosionThreadArg *args = arguments;
     sleep_add(0, 100000000);
+    wattron(game_screen, COLOR_PAIR(8));
     draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_1, DRAW);
     sleep_add(0, 100000000);
+    wattron(game_screen, COLOR_PAIR(8));
     draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_2, DRAW);
     sleep_add(0, 100000000);
+    wattron(game_screen, COLOR_PAIR(8));
     draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_2, ERASE);
 
     free(arguments);
@@ -182,10 +185,10 @@ void gen_hostile_missiles() {
         }
         rand_target_type = rand() % 2 - 1;
         if (rand_target_type) {
-            rand_target_x = cities_x_pos[rand() % 6] + rand() % 6;
+            rand_target_x = cities_x_pos[rand() % 6] + rand() % 4 + 1;
             rand_target_y = 36;
         } else {
-            rand_target_x = bases_x_pos[rand() % 3] + rand() % 6 + 2;
+            rand_target_x = bases_x_pos[rand() % 3] + rand() % 4 + 3;
             rand_target_y = 33;
         }
         hostile_missiles[i] = (struct missile) {
