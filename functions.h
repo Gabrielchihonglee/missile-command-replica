@@ -48,6 +48,8 @@ char *file_to_string(char *file_name);
 
 void update_small_explosion_stage(WINDOW *screen, int from_missile, int to_missile, int color);
 
+int score_multiplier(int score, int level);
+
 void refresh_high_score(WINDOW *screen);
 
 void carousel_from_string();

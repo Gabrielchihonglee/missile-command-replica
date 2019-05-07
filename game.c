@@ -42,7 +42,7 @@ struct hostileMissilesThreadArg {
 
 struct city {
     int x, y;
-    int survive;
+    int live;
 } cities[6];
 
 struct base {
@@ -152,7 +152,7 @@ void check_hit_player(float x, float y) {
             wattron(game_screen, COLOR_PAIR(3));
             mvwprintw(game_screen, FRAME_HEIGHT - 4, cities_x_pos[i], "       ");
             mvwprintw(game_screen, FRAME_HEIGHT - 3, cities_x_pos[i], "       ");
-            cities[i].survive = -1;
+            cities[i].live = 0;
         }
         init_missile_explosion(round(x), round(y));
     }
@@ -171,7 +171,7 @@ void check_hit_hostile(float x, float y) {
     for (int i = 0; i < 10; i++) {
         if (hostile_missiles[i].live && fabsf(x - hostile_missiles[i].x) < 5 && fabsf(y - hostile_missiles[i].y) < 5) {
             kill_missile(&hostile_missiles[i]);
-            score += 25;
+            score += score_multiplier(25, level);
         }
         init_missile_explosion(round(x), round(y));
     }
@@ -254,6 +254,54 @@ void next_level() {
     sched_wakeup(thread_create(&game, NULL));
 }
 
+void bonus_points() {
+    wattron(game_screen, COLOR_PAIR(5));
+    mvwprintw(game_screen, FRAME_HEIGHT / 2 - 2, FRAME_WIDTH / 2 - 6, "BONUS POINTS");
+
+    int bonus_points_missiles = 0;
+    char bonus_points_missiles_str[5];
+    for (int i = 0; i < 3; i++)
+        for (int j = bases[i].missile_count; j > 0; j--) {
+            bases[i].missile_count -= 1;
+            bonus_points_missiles += 5;
+            wattron(game_screen, COLOR_PAIR(2));
+            sprintf(bonus_points_missiles_str, "%i", bonus_points_missiles);
+            mvwprintw(game_screen, FRAME_HEIGHT / 2, FRAME_WIDTH / 2 - 6, bonus_points_missiles_str);
+            mvwaddch(game_screen, FRAME_HEIGHT / 2, FRAME_WIDTH / 2 - 2 + bonus_points_missiles / 5, '^');
+            update_missile_count();
+            wrefresh(game_screen);
+            sleep_add(0, 100000000);
+        }
+    score += bonus_points_missiles;
+    refresh_high_score(game_screen);
+    wrefresh(game_screen);
+
+    int bonus_points_cities = 0;
+    char bonus_points_cities_str[5];
+    for (int i = 0; i < 6; i++)
+        if (cities[i].live) {
+            mvwprintw(game_screen, FRAME_HEIGHT - 4, cities_x_pos[i], "       ");
+            mvwprintw(game_screen, FRAME_HEIGHT - 3, cities_x_pos[i], "       ");
+            bonus_points_cities += 100;
+            wattron(game_screen, COLOR_PAIR(2));
+            sprintf(bonus_points_cities_str, "%i", bonus_points_cities);
+            mvwprintw(game_screen, FRAME_HEIGHT / 2 + 2, FRAME_WIDTH / 2 - 6, bonus_points_cities_str);
+            wattron(game_screen, COLOR_PAIR(3));
+            mvwaddch(game_screen, FRAME_HEIGHT / 2 + 2, FRAME_WIDTH / 2 - 2 + (bonus_points_cities / 100) * 4 - 3, ACS_CKBOARD);
+            wattron(game_screen, COLOR_PAIR(5));
+            mvwaddch(game_screen, FRAME_HEIGHT / 2 + 2, FRAME_WIDTH / 2 - 2 + (bonus_points_cities / 100) * 4 + 1 - 3, ACS_CKBOARD);
+            wattron(game_screen, COLOR_PAIR(3));
+            mvwaddch(game_screen, FRAME_HEIGHT / 2 + 2, FRAME_WIDTH / 2 - 2 + (bonus_points_cities / 100) * 4 + 2 - 3, ACS_CKBOARD);
+            wrefresh(game_screen);
+            sleep_add(0, 300000000);
+        }
+    score += bonus_points_cities;
+    refresh_high_score(game_screen);
+    wrefresh(game_screen);
+
+    sleep_add(1, 0);
+}
+
 void check_end_missiles() {
     int live_count = 0;
     for (int i = 0; i < 10; i++) {
@@ -263,16 +311,18 @@ void check_end_missiles() {
     if (live_count == 0) {
         sleep_add(1, 0);
         game_live = 0;
+        bonus_points();
+        sleep_add(1, 0);
         endwin();
         //exit(0);
         next_level();
     }
 }
 
-void check_end_bases() {
+void check_end_cities() {
     int live_count = 0;
-    for (int i = 0; i < 3; i++) {
-        if (bases[i].live)
+    for (int i = 0; i < 6; i++) {
+        if (cities[i].live)
             live_count++;
     }
     if (live_count == 0) {
@@ -283,10 +333,10 @@ void check_end_bases() {
     }
 }
 
-void update_missiles() {
+void game_loop() {
     int counter = 0;
     while (game_live) {
-        sleep_add(0, 60000000 - 1000000 * level);
+        sleep_add(0, 60000000 * 1 / pow(level * 0.06 + 0.95 ,2));
         //sleep_add(0, 100000000);
         if (counter < 4)
             counter++;
@@ -294,10 +344,11 @@ void update_missiles() {
             counter = 0;
         if (!counter) {
             sub_update_missiles(hostile_missiles, 10);
-            check_end_bases();
+            check_end_cities();
             check_end_missiles();
         }
         sub_update_missiles(player_missiles, 45);
+        refresh_high_score(game_screen);
         wrefresh(game_screen);
     }
 }
@@ -401,17 +452,14 @@ void game() {
     }
     update_missile_count();
 
-    struct thread *gen_hostile_missiles_thread = thread_create(&gen_hostile_missiles, NULL);
-    sched_wakeup(gen_hostile_missiles_thread);
+    for (int i = 0; i < 6; i++) {
+        cities[i] = (struct city) {
+            .x = cities_x_pos[i],
+            .y = FRAME_HEIGHT - 4,
+            .live = 1
+        };
+    }
 
-    struct thread *update_missiles_thread = thread_create(&update_missiles, NULL);
-    sched_wakeup(update_missiles_thread);
-
-    /**while (game_live) {
-        sleep_add(1, 0);
-        pthread_mutex_lock(&lock);
-        wrefresh(game_screen);
-        refresh_high_score(game_screen);
-        pthread_mutex_unlock(&lock);
-    }**/
+    sched_wakeup(thread_create(&gen_hostile_missiles, NULL));
+    sched_wakeup(thread_create(&game_loop, NULL));
 }

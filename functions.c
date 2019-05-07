@@ -128,10 +128,32 @@ Score Multiplier:
     Level 3/4: 2x
     Level 5/6: 3x
     Level 7/8: 4x
-    Level 8/9: 5x
+    Level 9/10: 5x
     Level 11+: 6x
 Info from: https://strategywiki.org/wiki/Missile_Command/Walkthrough
 **/
+
+int score_multiplier(int score, int level) {
+    switch (level) {
+        case 1:
+        case 2:
+            return score;
+        case 3:
+        case 4:
+            return score * 2;
+        case 5:
+        case 6:
+            return score * 3;
+        case 7:
+        case 8:
+            return score * 4;
+        case 9:
+        case 10:
+            return score * 5;
+        default:
+            return score * 6;
+    }
+}
 
 void refresh_high_score(WINDOW *screen) {
     char score_text[10];
