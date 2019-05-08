@@ -115,6 +115,28 @@ void update_small_explosion_stage(WINDOW *screen, int from_missile, int to_missi
     sleep_add(0, 60000000);
 }
 
+// thread that handles the flashing part
+void flash_from_string(void *args) {
+    struct string_flash_arg *string_flash_arg = args;
+    while (!current_thread->should_exit) { // run till prep screen ends, when should_exit will be set to false
+        wattron(string_flash_arg->screen, COLOR_PAIR(string_flash_arg->color_pair));
+        mvwprintw(string_flash_arg->screen, string_flash_arg->y, string_flash_arg->x, string_flash_arg->text);
+        wrefresh(string_flash_arg->screen);
+        if (current_thread->should_exit)
+            break;
+        sleep_add(0, string_flash_arg->duration / 2 * 1000);
+        wattron(string_flash_arg->screen, COLOR_PAIR(string_flash_arg->color_pair));
+        for (int i = 0; i < strlen(string_flash_arg->text) - 1; i++) {
+            mvwprintw(string_flash_arg->screen, string_flash_arg->y, string_flash_arg->x + i, " ");
+            wrefresh(string_flash_arg->screen);
+        }
+        if (current_thread->should_exit)
+            break;
+        sleep_add(0, string_flash_arg->duration / 2 * 1000);
+    }
+    free(string_flash_arg);
+}
+
 /**
 SCORE CALCULATION METHOD:
 Base Scores:

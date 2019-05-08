@@ -1,8 +1,9 @@
 #ifndef PREP_H
 #define PREP_H
 
-void flash_from_string();
-
+/**
+* Executes the prep stage of the game.
+*/
 void prep();
 
 #endif
