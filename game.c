@@ -232,7 +232,8 @@ void gen_hostile_missiles() {
         // shoot 4 per wave, 5 seconds between 2 waves
         if (i == 4) {
             sleep_add(5, 0);
-            create_fighter();
+            if (level != 1)
+                create_fighter();
         }
 
         rand_target_type = rand() % 2 - 1; // half of the missiles will target cities, while others target bases
@@ -247,7 +248,7 @@ void gen_hostile_missiles() {
         for (int j = 0; j < MAX_HOSTILE_MISSILE; j++)
             if (!hostile_missiles[j].live) {
                 hostile_missiles[j] = create_hostile_missile((rand() % (FRAME_WIDTH - 1)), 0, rand_target_x, rand_target_y, HOSTILE_NORMAL);
-                if (i == 2)
+                if (!rand() % 6) // 1 in 6 chance
                     hostile_missiles[j].type = HOSTILE_SPLIT;
                 break;
             }
@@ -257,23 +258,27 @@ void gen_hostile_missiles() {
 void split_missile(struct missile *missile_pt) {
     missile_pt->type = HOSTILE_NORMAL;
 
-    int rand_target_type;
-    int rand_target_x, rand_target_y;
+    int split_num = rand() % 3 + 1;
 
-    rand_target_type = rand() % 2 - 1; // half of the missiles will target cities, while others target bases
-    if (rand_target_type) {
-        rand_target_x = cities_x_pos[rand() % 6] + rand() % 4 + 1;
-        rand_target_y = 36;
-    } else {
-        rand_target_x = bases_x_pos[rand() % 3] + rand() % 4 + 3;
-        rand_target_y = 33;
-    }
+    for (int i = 0; i < split_num; i++) {
+        int rand_target_type;
+        int rand_target_x, rand_target_y;
 
-    for (int j = 0; j < MAX_HOSTILE_MISSILE; j++)
-        if (!hostile_missiles[j].live) {
-            hostile_missiles[j] = create_hostile_missile(missile_pt->x, missile_pt->y, rand_target_x, rand_target_y, HOSTILE_NORMAL);
-            break;
+        rand_target_type = rand() % 2 - 1; // half of the missiles will target cities, while others target bases
+        if (rand_target_type) {
+            rand_target_x = cities_x_pos[rand() % 6] + rand() % 4 + 1;
+            rand_target_y = 36;
+        } else {
+            rand_target_x = bases_x_pos[rand() % 3] + rand() % 4 + 3;
+            rand_target_y = 33;
         }
+
+        for (int j = 0; j < MAX_HOSTILE_MISSILE; j++)
+            if (!hostile_missiles[j].live) {
+                hostile_missiles[j] = create_hostile_missile(missile_pt->x, missile_pt->y, rand_target_x, rand_target_y, HOSTILE_NORMAL);
+                break;
+            }
+    }
 }
 
 // updates fighter jet and ufo
@@ -300,7 +305,7 @@ void update_specials() {
 
             for (int j = 0; j < MAX_HOSTILE_MISSILE; j++)
                 if (!hostile_missiles[j].live) {
-                    hostile_missiles[j] = create_hostile_missile(fighter.x, fighter.y + 2, rand_target_x, rand_target_y, HOSTILE_NORMAL);
+                    hostile_missiles[j] = create_hostile_missile(fighter.x + 4, fighter.y + 2, rand_target_x, rand_target_y, HOSTILE_NORMAL);
                     break;
                 }
         }

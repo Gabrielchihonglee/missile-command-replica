@@ -46,7 +46,11 @@ void draw_from_file(WINDOW *screen, int start_x, int start_y, char file[], enum 
                 wmove(screen, y + 1, start_x);
                 break;
             default: // ?!
-                fprintf(stderr, "Unexpected character found in %s: '%c'", file, symbol);
+                if (mode == 1)
+                    waddch(screen, symbol);
+                else
+                    waddch(screen, ' ');
+                //fprintf(stderr, "Unexpected character found in %s: '%c'", file, symbol);
                 break;
         }
         wrefresh(screen);

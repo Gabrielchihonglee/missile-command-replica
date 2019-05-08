@@ -19,8 +19,8 @@ int main() {
     input_init();
     signal(SIGUSR1, signal_dummy);
 
-    //srand(time(0));
-    srand(1912);
+    srand(time(0));
+    //srand(1912);
     initscr();
     raw();
     curs_set(0);
