@@ -225,6 +225,8 @@ void gen_hostile_missiles() {
             .tar_x = rand_target_x,
             .tar_y = rand_target_y
         };
+        if (i == 2)
+            hostile_missiles[i].type = HOSTILE_SPLIT;
         hostile_missiles[i].x = hostile_missiles[i].start_x;
         dist = sqrtf(powf(hostile_missiles[i].x - rand_target_x, 2) + rand_target_y * rand_target_y);
         hostile_missiles[i].vel_x = (rand_target_x - hostile_missiles[i].x) / dist;
@@ -232,10 +234,49 @@ void gen_hostile_missiles() {
     }
 }
 
+void split_missile(struct missile *missile_pt) {
+    missile_pt->type = HOSTILE_NORMAL;
+
+    int rand_target_type;
+    int rand_target_x, rand_target_y;
+    float dist;
+
+    rand_target_type = rand() % 2 - 1; // half of the missiles will target cities, while others target bases
+    if (rand_target_type) {
+        rand_target_x = cities_x_pos[rand() % 6] + rand() % 4 + 1;
+        rand_target_y = 36;
+    } else {
+        rand_target_x = bases_x_pos[rand() % 3] + rand() % 4 + 3;
+        rand_target_y = 33;
+    }
+
+    struct missile new_missile = (struct missile) {
+        .live = 1,
+        .type = HOSTILE_NORMAL,
+        .start_x = missile_pt->x,
+        .start_y = missile_pt->y,
+        .x = missile_pt->x,
+        .y = missile_pt->y,
+        .vel_x = 0,
+        .vel_y = 0,
+        .tar_x = rand_target_x,
+        .tar_y = rand_target_y
+    };
+    dist = sqrtf(powf(new_missile.x - rand_target_x, 2) + rand_target_y * rand_target_y);
+    new_missile.vel_x = (rand_target_x - new_missile.x) / dist;
+    new_missile.vel_y = (rand_target_y - new_missile.y) / dist;
+
+    hostile_missiles[8] = new_missile;
+}
+
 // updates missiles position and prints the trail behind it
 void sub_update_missiles(struct missile *missiles, int missile_count) {
     for (int i = 0; i < missile_count; i++) {
         if (missiles[i].live) {
+            if (missiles[i].type == HOSTILE_SPLIT && fabsf(missiles[i].y - 10) < 1) {
+                split_missile(&missiles[i]);
+            }
+
             if (fabsf(missiles[i].x - missiles[i].tar_x) < 1 && fabsf(missiles[i].y - missiles[i].tar_y) < 1) { // check if it arrived at it's destination
                 if (missiles[i].type == PLAYER)
                     check_hit_hostile(missiles[i].x, missiles[i].y);
