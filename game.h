@@ -4,7 +4,7 @@
 /**
 * Executes the game stage of the game.
 */
-enum missileType {PLAYER, HOSTILE_NORMAL, HOSTILE_CRAZY};
+enum missileType {PLAYER, HOSTILE_NORMAL, HOSTILE_SPLIT, HOSTILE_CRAZY};
 
 void game();
 

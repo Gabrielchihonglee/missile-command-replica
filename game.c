@@ -16,6 +16,9 @@
 #include <time.h>
 #include <signal.h>
 
+#define MAX_HOSTILE_MISSILE 20
+#define BASE_DEFAULT_MISSILE 10
+
 struct missile {
     enum missileType type;
     int start_x, start_y;
@@ -46,7 +49,7 @@ struct base {
 
 static WINDOW *game_screen;
 static int game_live = 0;
-static struct missile hostile_missiles[10] = {0};
+static struct missile hostile_missiles[MAX_HOSTILE_MISSILE] = {0};
 static struct missile player_missiles[45] = {0};
 static int level = 1;
 
@@ -181,8 +184,9 @@ void check_hit_player(float x, float y) {
 
 // checks if player missile hit hostile missile
 void check_hit_hostile(float x, float y) {
-    for (int i = 0; i < 10; i++) {
-        if (hostile_missiles[i].live && fabsf(x - hostile_missiles[i].x) < 5 && fabsf(y - hostile_missiles[i].y) < 5) {
+    for (int i = 0; i < MAX_HOSTILE_MISSILE; i++) {
+        float dist = sqrt(pow((x - hostile_missiles[i].x), 2) + pow((y - hostile_missiles[i].y), 2));
+        if (hostile_missiles[i].live && dist < 5) {
             kill_missile(&hostile_missiles[i]);
             score += score_multiplier(25, level);
         }
@@ -337,7 +341,7 @@ void bonus_points() {
 // check if all hostile missiles are gone
 void check_end_missiles() {
     int live_count = 0;
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < MAX_HOSTILE_MISSILE; i++)
         if (hostile_missiles[i].live)
             live_count++;
     if (live_count == 0) {
@@ -377,7 +381,7 @@ void game_loop() {
         else
             counter = 0;
         if (!counter) { // updates the hostile missiles 1 in 4 ticks, so that player missiles moves 4 times faster than hostile ones
-            sub_update_missiles(hostile_missiles, 10);
+            sub_update_missiles(hostile_missiles, MAX_HOSTILE_MISSILE);
             check_end_cities();
             check_end_missiles();
         }
@@ -459,6 +463,33 @@ void game_screen_input() {
     }
 }
 
+// introduces the stage to user
+void stage_intro() {
+    draw_screen_settings(game_screen, 0, cities);
+    char level_text[5], score_x_text[5], speed_x_text[316];
+    sprintf(level_text, "%i", level);
+    sprintf(score_x_text, "%i", score_multiplier(1, level));
+    sprintf(speed_x_text, "%.2f", pow(level * 0.06 + 0.95 ,2));
+    char field[4][2][10] = {
+        {"PLAYER", "1"},
+        {"LEVEL", NULL},
+        {"SCORE X", NULL},
+        {"SPEED X", NULL}
+    };
+    strcpy(field[1][1], level_text);
+    strcpy(field[2][1], score_x_text);
+    strcpy(field[3][1], speed_x_text);
+    for (int i = 0; i < 4; i++) {
+        wattron(game_screen, COLOR_PAIR(5));
+        mvwprintw(game_screen, FRAME_HEIGHT / 2 - 4 + i * 2, FRAME_WIDTH / 2 - 6, field[i][0]);
+        wattron(game_screen, COLOR_PAIR(2));
+        mvwprintw(game_screen, FRAME_HEIGHT / 2 - 4 + i * 2, FRAME_WIDTH / 2 + 3, field[i][1]);
+    }
+    wrefresh(game_screen);
+    sleep_add(2, 0);
+    werase(game_screen);
+}
+
 void game() {
     sched_wakeup(thread_create(&game_screen_input, NULL));
 
@@ -471,12 +502,14 @@ void game() {
     keypad(game_screen, TRUE);
     noecho();
 
+    stage_intro();
+
     // setup all bases
     for (int i = 0; i < 3; i++) {
         bases[i] = (struct base) {
             .x = bases_x_pos[i],
             .y = FRAME_HEIGHT - 6,
-            .missile_count = 10,
+            .missile_count = BASE_DEFAULT_MISSILE,
             .live = 1
         };
     }
