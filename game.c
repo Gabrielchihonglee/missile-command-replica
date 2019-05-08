@@ -21,11 +21,11 @@
 
 struct missile {
     enum missileType type;
-    int start_x, start_y;
+    float start_x, start_y;
     float x, y;
     float old_x, old_y;
     float vel_x, vel_y;
-    int tar_x, tar_y;
+    float tar_x, tar_y;
     int live;
 };
 
@@ -46,6 +46,12 @@ struct base {
     int missile_count;
     int live;
 } bases[3];
+
+struct fighter {
+    int x, y;
+    int shoot_x;
+    int live;
+} fighter;
 
 static WINDOW *game_screen;
 static int game_live = 0;
@@ -194,43 +200,57 @@ void check_hit_hostile(float x, float y) {
     }
 }
 
+void create_fighter() {
+    fighter.live = 1;
+    fighter.x = 0;
+    fighter.y = 13;
+}
+
+// creates and returns a hostile missile
+struct missile create_hostile_missile(float from_x, float from_y, float to_x, float to_y, enum missileType type) {
+    struct missile missile = {
+        .live = 1,
+        .type = HOSTILE_NORMAL,
+        .start_x = from_x,
+        .start_y = from_y,
+        .x = from_x,
+        .y = from_y,
+        .tar_x = to_x,
+        .tar_y = to_y
+    };
+    float dist = sqrtf(powf(from_x - to_x, 2) + powf(from_y - to_y, 2));
+    missile.vel_x = (to_x - from_x) / dist;
+    missile.vel_y = (to_y - from_y) / dist;
+    return missile;
+}
+
 // generates hostile missiles
 void gen_hostile_missiles() {
     int rand_target_type;
-    int rand_target_x, rand_target_y;
-    float dist;
+    float rand_target_x, rand_target_y;
     for (int i = 0; i < 8; i++) {
         // shoot 4 per wave, 5 seconds between 2 waves
         if (i == 4) {
             sleep_add(5, 0);
+            create_fighter();
         }
 
         rand_target_type = rand() % 2 - 1; // half of the missiles will target cities, while others target bases
         if (rand_target_type) {
-            rand_target_x = cities_x_pos[rand() % 6] + rand() % 4 + 1;
+            rand_target_x = cities[rand() % 6].x + rand() % 4 + 1;
             rand_target_y = 36;
         } else {
-            rand_target_x = bases_x_pos[rand() % 3] + rand() % 4 + 3;
+            rand_target_x = bases[rand() % 3].x + rand() % 4 + 3;
             rand_target_y = 33;
         }
 
-        hostile_missiles[i] = (struct missile) {
-            .live = 1,
-            .type = HOSTILE_NORMAL,
-            .start_x = (rand() % (FRAME_WIDTH - 1)),
-            .start_y = 0,
-            .y = 0,
-            .vel_x = 0,
-            .vel_y = 0,
-            .tar_x = rand_target_x,
-            .tar_y = rand_target_y
-        };
-        if (i == 2)
-            hostile_missiles[i].type = HOSTILE_SPLIT;
-        hostile_missiles[i].x = hostile_missiles[i].start_x;
-        dist = sqrtf(powf(hostile_missiles[i].x - rand_target_x, 2) + rand_target_y * rand_target_y);
-        hostile_missiles[i].vel_x = (rand_target_x - hostile_missiles[i].x) / dist;
-        hostile_missiles[i].vel_y = rand_target_y / dist;
+        for (int j = 0; j < MAX_HOSTILE_MISSILE; j++)
+            if (!hostile_missiles[j].live) {
+                hostile_missiles[j] = create_hostile_missile((rand() % (FRAME_WIDTH - 1)), 0, rand_target_x, rand_target_y, HOSTILE_NORMAL);
+                if (i == 2)
+                    hostile_missiles[j].type = HOSTILE_SPLIT;
+                break;
+            }
     }
 }
 
@@ -239,7 +259,6 @@ void split_missile(struct missile *missile_pt) {
 
     int rand_target_type;
     int rand_target_x, rand_target_y;
-    float dist;
 
     rand_target_type = rand() % 2 - 1; // half of the missiles will target cities, while others target bases
     if (rand_target_type) {
@@ -250,30 +269,49 @@ void split_missile(struct missile *missile_pt) {
         rand_target_y = 33;
     }
 
-    struct missile new_missile = (struct missile) {
-        .live = 1,
-        .type = HOSTILE_NORMAL,
-        .start_x = missile_pt->x,
-        .start_y = missile_pt->y,
-        .x = missile_pt->x,
-        .y = missile_pt->y,
-        .vel_x = 0,
-        .vel_y = 0,
-        .tar_x = rand_target_x,
-        .tar_y = rand_target_y
-    };
-    dist = sqrtf(powf(new_missile.x - rand_target_x, 2) + rand_target_y * rand_target_y);
-    new_missile.vel_x = (rand_target_x - new_missile.x) / dist;
-    new_missile.vel_y = (rand_target_y - new_missile.y) / dist;
+    for (int j = 0; j < MAX_HOSTILE_MISSILE; j++)
+        if (!hostile_missiles[j].live) {
+            hostile_missiles[j] = create_hostile_missile(missile_pt->x, missile_pt->y, rand_target_x, rand_target_y, HOSTILE_NORMAL);
+            break;
+        }
+}
 
-    hostile_missiles[8] = new_missile;
+// updates fighter jet and ufo
+void update_specials() {
+    if (fighter.live) {
+        if (fighter.x > FRAME_WIDTH - 7) {
+            fighter.live = 0;
+        }
+        draw_from_file(game_screen, fighter.x, fighter.y, "graphics/fighter-jet", ERASE);
+        fighter.x += 1;
+        draw_from_file(game_screen, fighter.x, fighter.y, "graphics/fighter-jet", DRAW);
+        if (fabsf(fighter.x - 40) < 1) {
+            int rand_target_type;
+            int rand_target_x, rand_target_y;
+
+            rand_target_type = rand() % 2 - 1; // half of the missiles will target cities, while others target bases
+            if (rand_target_type) {
+                rand_target_x = cities_x_pos[rand() % 6] + rand() % 4 + 1;
+                rand_target_y = 36;
+            } else {
+                rand_target_x = bases_x_pos[rand() % 3] + rand() % 4 + 3;
+                rand_target_y = 33;
+            }
+
+            for (int j = 0; j < MAX_HOSTILE_MISSILE; j++)
+                if (!hostile_missiles[j].live) {
+                    hostile_missiles[j] = create_hostile_missile(fighter.x, fighter.y + 2, rand_target_x, rand_target_y, HOSTILE_NORMAL);
+                    break;
+                }
+        }
+    }
 }
 
 // updates missiles position and prints the trail behind it
 void sub_update_missiles(struct missile *missiles, int missile_count) {
     for (int i = 0; i < missile_count; i++) {
         if (missiles[i].live) {
-            if (missiles[i].type == HOSTILE_SPLIT && fabsf(missiles[i].y - 10) < 1) {
+            if (missiles[i].type == HOSTILE_SPLIT && fabsf(missiles[i].y - 14) < 1) {
                 split_missile(&missiles[i]);
             }
 
@@ -422,6 +460,7 @@ void game_loop() {
         else
             counter = 0;
         if (!counter) { // updates the hostile missiles 1 in 4 ticks, so that player missiles moves 4 times faster than hostile ones
+            update_specials();
             sub_update_missiles(hostile_missiles, MAX_HOSTILE_MISSILE);
             check_end_cities();
             check_end_missiles();
@@ -513,9 +552,9 @@ void stage_intro() {
     sprintf(speed_x_text, "%.2f", pow(level * 0.06 + 0.95 ,2));
     char field[4][2][10] = {
         {"PLAYER", "1"},
-        {"LEVEL", NULL},
-        {"SCORE X", NULL},
-        {"SPEED X", NULL}
+        {"LEVEL", ""},
+        {"SCORE X", ""},
+        {"SPEED X", ""}
     };
     strcpy(field[1][1], level_text);
     strcpy(field[2][1], score_x_text);
@@ -544,6 +583,8 @@ void game() {
     noecho();
 
     stage_intro();
+
+    fighter = (struct fighter) {0};
 
     // setup all bases
     for (int i = 0; i < 3; i++) {
