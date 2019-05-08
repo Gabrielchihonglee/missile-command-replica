@@ -1,7 +1,7 @@
+#include "end.h"
 #include "functions.h"
 #include "highscore.h"
 
-#include "threading/list.h"
 #include "threading/thread.h"
 #include "threading/input.h"
 #include "threading/scheduler.h"
@@ -10,23 +10,20 @@
 #include <ncurses.h>
 #include <math.h>
 #include <stdbool.h>
-#include <unistd.h>
 
+// variables for the octagon
 int radius = 30;
 int center_x = FRAME_WIDTH/2 - 1;
 int center_y = FRAME_HEIGHT/2 - 1;
 
+// prints the vertexes of an octagon
 void print_vertex(WINDOW *screen, int num) {
     mvwaddch(screen, round(sin(M_PI/4 * num) * radius * 0.5 + center_y), round(cos(M_PI/4 * num) * radius + center_x), 'X');
-    char temp[20];
-    sprintf(temp, "%i,%i", (int) round(cos(M_PI/4 * num) * radius + center_x), (int) round(sin(M_PI/4 * num) * radius * 0.5 + center_y));
-    mvwprintw(screen, (int) round(sin(M_PI/4 * num) * radius * 0.5 + center_y) - 1, (int) round(cos(M_PI/4 * num) * radius + center_x) - 2, temp);
-    //sprintf(tempp, "%f, %f", (cos(M_PI/4 * num) * radius + center_x), (sin(M_PI/4 * num) * radius + center_y));
-    //mvwprintw(screen, (sin(M_PI/4 * num) * radius + center_y - 2), (cos(M_PI/4 * num) * radius + center_x - 9), tempp);
     wrefresh(screen);
     sleep_add(0, 100000000);
 }
 
+// prints an edge of an octagon
 void print_edge(WINDOW *screen, int num_from, int num_to) {
     int from_x = round(cos(M_PI/4 * num_from) * radius + center_x);
     int from_y = round(sin(M_PI/4 * num_from) * radius * 0.5 + center_y);
@@ -50,6 +47,7 @@ void print_edge(WINDOW *screen, int num_from, int num_to) {
     sleep_add(0, 100000000);
 }
 
+// returns if the point should be filled, aka if it is outside of the octagon
 bool should_fill(int x, int y) {
     double angle;
     if (x == center_x) {
@@ -72,22 +70,21 @@ bool should_fill(int x, int y) {
     int to_x = round(cos(M_PI/4 * (region + 1)) * radius + center_x);
     int to_y = round(sin(M_PI/4 * (region + 1)) * radius * 0.5 + center_y);
 
-    //return region + 1;
-
     double boundary_y = (double) (to_y - from_y) / (to_x - from_x) * (x - from_x) + from_y;
-    if (y > boundary_y && y > center_y) // point is lower than line && lower half
+    if (y > boundary_y && y > center_y) // lower than line && lower half
         return true;
-    if (y < boundary_y && y < center_y) // point is higher than line && upper half/horizontal middle
+    if (y < boundary_y && y < center_y) // higher than line && upper half
         return true;
-    if (y == center_y) {
-        if (y > boundary_y && x > center_x)
+    if (y == center_y) { // horizontally center
+        if (y > boundary_y && x > center_x) // lower than line && right half
             return true;
-        if (y < boundary_y && x < center_x)
+        if (y < boundary_y && x < center_x) // higher than line && left half
             return true;
     }
     return false;
 }
 
+// fills the area outside of the octagon
 void fill_out(WINDOW *screen) {
     for (int i = 0; i < FRAME_HEIGHT; i++)
         for (int j = 0; j < FRAME_WIDTH; j+=1)
@@ -98,23 +95,23 @@ void fill_out(WINDOW *screen) {
 void end() {
     WINDOW *end_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(end_screen, A_BOLD);
-    wattron(end_screen, COLOR_PAIR(4));
 
     char *the_end_text = file_to_string("graphics/the-end-text");
 
+    // expands the octagon
     for (int i = 2; i < (FRAME_HEIGHT - 2); i++) {
         werase(end_screen);
         wattron(end_screen, COLOR_PAIR(rand() % 8 + 1));
-        draw_fill(end_screen);
+        draw_fill(end_screen); // fill background with random color
         wattron(end_screen, COLOR_PAIR(2));
-        draw_from_string(end_screen, FRAME_WIDTH / 2 - 28, FRAME_HEIGHT / 2 - 4, the_end_text, DRAW);
+        draw_from_string(end_screen, FRAME_WIDTH / 2 - 28, FRAME_HEIGHT / 2 - 4, the_end_text, DRAW); // write "THE END"
         radius = i;
         fill_out(end_screen);
         wrefresh(end_screen);
-        usleep(80000);
-        //sleep_add(0, 80000000);
+        sleep_add(0, 80000000);
     }
 
+    // shrinks the octagon
     for (int i = (FRAME_HEIGHT - 2); i > 2; i--) {
         werase(end_screen);
         wattron(end_screen, COLOR_PAIR(rand() % 8 + 1));
@@ -129,6 +126,5 @@ void end() {
     }
 
     endwin();
-
     highscore();
 }
