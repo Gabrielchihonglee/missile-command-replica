@@ -2,7 +2,6 @@
 #include "end.h"
 #include "functions.h"
 
-#include "threading/list.h"
 #include "threading/thread.h"
 #include "threading/input.h"
 #include "threading/scheduler.h"
@@ -15,7 +14,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
-#include <pthread.h>
 #include <signal.h>
 
 struct missile {
@@ -28,12 +26,12 @@ struct missile {
     int live;
 };
 
-struct missileExplosionThreadArg {
+struct missile_explosion_thread_arg {
     WINDOW *screen;
     int x, y;
 };
 
-struct hostileMissilesThreadArg {
+struct hostile_missiles_thread_arg {
     WINDOW *screen;
     int live;
     struct missile *hostile_missiles;
@@ -55,6 +53,23 @@ static int level = 1;
 char *STAGE_1, *STAGE_2;
 char *LARGE_STAGE_1, *LARGE_STAGE_2;
 
+// updates bases' missile count, as the name suggests
+void update_missile_count() {
+    char missile_count[3];
+    for (int i = 0; i < 3; i++) {
+        if (!bases[i].missile_count) {
+            wattron(game_screen, COLOR_PAIR(84));
+            mvwprintw(game_screen, bases[i].y + 4, bases[i].x + 4, "OUT");
+        } else {
+            sprintf(missile_count, "%i", bases[i].missile_count);
+            wattron(game_screen, COLOR_PAIR(84));
+            mvwprintw(game_screen, bases[i].y + 4, bases[i].x + 4, "   "); // first, erase previous number
+            mvwprintw(game_screen, bases[i].y + 4, bases[i].x + 4, missile_count); // then, display new number
+        }
+    }
+}
+
+// activates player missile
 void shoot_player_missile(int tar_x, int tar_y, int base) {
     if (!bases[base].missile_count) {
         update_missile_count();
@@ -78,93 +93,93 @@ void shoot_player_missile(int tar_x, int tar_y, int base) {
     dist = sqrtf(powf(player_missile.x - player_missile.tar_x, 2) + powf(player_missile.y - player_missile.tar_y, 2));
     player_missile.vel_x = (player_missile.tar_x - player_missile.x) / dist * 2;
     player_missile.vel_y = (player_missile.tar_y - player_missile.y) / dist * 2;
+
+    // add missile to the array of missiles to be updated
     for (int i = 0; i < 30; i++) {
         if (!player_missiles[i].live) {
             player_missiles[i] = player_missile;
             break;
         }
     }
+
     bases[base].missile_count--;
     update_missile_count();
 }
 
-void update_missile_count() {
-    char missile_count[3];
-    for (int i = 0; i < 3; i++) {
-        if (!bases[i].missile_count) {
-            wattron(game_screen, COLOR_PAIR(84));
-            mvwprintw(game_screen, bases[i].y + 4, bases[i].x + 4, "OUT");
-        } else {
-            sprintf(missile_count, "%i", bases[i].missile_count);
-            wattron(game_screen, COLOR_PAIR(84));
-            mvwprintw(game_screen, bases[i].y + 4, bases[i].x + 4, "   ");
-            mvwprintw(game_screen, bases[i].y + 4, bases[i].x + 4, missile_count);
-        }
-    }
-}
-
+// remove missile from screen
 void kill_missile(void *missile_input) {
     struct missile *missile = missile_input;
     missile->live = 0;
     wattron(game_screen, COLOR_PAIR(1));
-    mvwaddch(game_screen, missile->tar_y, missile->tar_x, ' ');
+    //mvwaddch(game_screen, missile->tar_y, missile->tar_x, ' ');
+    // clean trace from current position back to where it started
     while (1) {
         mvwaddch(game_screen, round(missile->y), round(missile->x), ' ');
         if (fabsf(missile->x - missile->start_x) < 0.1 && fabsf(missile->y - missile->start_y) < 0.1) {
             break;
         }
+        // move backwards
         missile->x -= missile->vel_x;
         missile->y -= missile->vel_y;
     }
 }
 
+// handles missile explosion
 void update_missile_explosion(void *arguments) {
-    struct missileExplosionThreadArg *args = arguments;
+    struct missile_explosion_thread_arg *args = arguments;
+
     sleep_add(0, 100000000);
     wattron(game_screen, COLOR_PAIR(8));
-    draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_1, DRAW);
+    draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_1, DRAW); // explosion stage 1
+
     sleep_add(0, 100000000);
     wattron(game_screen, COLOR_PAIR(8));
-    draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_2, DRAW);
+    draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_2, DRAW); // explosion stage 2
+
     sleep_add(0, 100000000);
     wattron(game_screen, COLOR_PAIR(8));
-    draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_2, ERASE);
+    draw_from_string(args->screen, args->x - 4, args->y - 2, LARGE_STAGE_2, ERASE); // clean up explosion
 
     free(arguments);
 }
 
+// starts the explosion
 void init_missile_explosion(int x, int y) {
-    struct missileExplosionThreadArg *missile_explosion_args = malloc(sizeof(*missile_explosion_args));
-    *missile_explosion_args = (struct missileExplosionThreadArg) {
+    struct missile_explosion_thread_arg *missile_explosion_args = malloc(sizeof(*missile_explosion_args));
+    *missile_explosion_args = (struct missile_explosion_thread_arg) {
         .screen = game_screen,
         .x = x,
         .y = y
     };
-    struct thread *missile_explosion_thread = thread_create(&update_missile_explosion, missile_explosion_args);
-    sched_wakeup(missile_explosion_thread);
+    sched_wakeup(thread_create(&update_missile_explosion, missile_explosion_args));
 }
 
+// checks if hostile missile hit player's cities or bases
 void check_hit_player(float x, float y) {
+    // check city hit
     for (int i = 0; i < 6; i++) {
         if ((x >= cities_x_pos[i]) && (x <= (cities_x_pos[i] + 6))) {
             wattron(game_screen, COLOR_PAIR(3));
+            // remove city from screen
             mvwprintw(game_screen, FRAME_HEIGHT - 4, cities_x_pos[i], "       ");
             mvwprintw(game_screen, FRAME_HEIGHT - 3, cities_x_pos[i], "       ");
             cities[i].live = 0;
         }
         init_missile_explosion(round(x), round(y));
     }
+    // check base hit
     for (int i = 0; i < 3; i++) {
         if ((x >= bases[i].x) && (x <= (bases[i].x + 7))) {
-            bases[i].missile_count = 0;
+            bases[i].missile_count = 0; // a destroyed base can't shoot missiles ya?
             bases[i].live = 0;
-            draw_from_file(game_screen, bases[i].x, FRAME_HEIGHT - 6, "graphics/base", ERASE);
+            draw_from_file(game_screen, bases[i].x, FRAME_HEIGHT - 6, "graphics/base", ERASE); // remove base from screen
             update_missile_count();
         }
         init_missile_explosion(round(x), round(y));
     }
 }
 
+// checks if player missile hit hostile missile
 void check_hit_hostile(float x, float y) {
     for (int i = 0; i < 10; i++) {
         if (hostile_missiles[i].live && fabsf(x - hostile_missiles[i].x) < 5 && fabsf(y - hostile_missiles[i].y) < 5) {
@@ -175,15 +190,18 @@ void check_hit_hostile(float x, float y) {
     }
 }
 
+// generates hostile missiles
 void gen_hostile_missiles() {
     int rand_target_type;
     int rand_target_x, rand_target_y;
     float dist;
     for (int i = 0; i < 8; i++) {
+        // shoot 4 per wave, 5 seconds between 2 waves
         if (i == 4) {
             sleep_add(5, 0);
         }
-        rand_target_type = rand() % 2 - 1;
+
+        rand_target_type = rand() % 2 - 1; // half of the missiles will target cities, while others target bases
         if (rand_target_type) {
             rand_target_x = cities_x_pos[rand() % 6] + rand() % 4 + 1;
             rand_target_y = 36;
@@ -191,6 +209,7 @@ void gen_hostile_missiles() {
             rand_target_x = bases_x_pos[rand() % 3] + rand() % 4 + 3;
             rand_target_y = 33;
         }
+
         hostile_missiles[i] = (struct missile) {
             .live = 1,
             .type = HOSTILE_NORMAL,
@@ -209,20 +228,23 @@ void gen_hostile_missiles() {
     }
 }
 
+// updates missiles position and prints the trail behind it
 void sub_update_missiles(struct missile *missiles, int missile_count) {
     for (int i = 0; i < missile_count; i++) {
         if (missiles[i].live) {
-            if (fabsf(missiles[i].x - missiles[i].tar_x) < 1 && fabsf(missiles[i].y - missiles[i].tar_y) < 1) {
+            if (fabsf(missiles[i].x - missiles[i].tar_x) < 1 && fabsf(missiles[i].y - missiles[i].tar_y) < 1) { // check if it arrived at it's destination
                 if (missiles[i].type == PLAYER)
                     check_hit_hostile(missiles[i].x, missiles[i].y);
                 else
                     check_hit_player(missiles[i].x, missiles[i].y);
                 kill_missile(&missiles[i]);
             } else {
+                // calculate new posiiton of the missile
                 missiles[i].old_x = missiles[i].x;
                 missiles[i].old_y = missiles[i].y;
                 missiles[i].x += missiles[i].vel_x;
                 missiles[i].y += missiles[i].vel_y;
+                // display the track behind the missile
                 if (missiles[i].type == PLAYER) {
                     wattron(game_screen, COLOR_PAIR(5));
                     if (round(missiles[i].vel_x) > 0)
@@ -240,6 +262,7 @@ void sub_update_missiles(struct missile *missiles, int missile_count) {
                     else
                         mvwaddch(game_screen, round(missiles[i].old_y), round(missiles[i].old_x), '|');
                 }
+                // show position of missile
                 wattron(game_screen, COLOR_PAIR(8));
                 mvwaddch(game_screen, round(missiles[i].y), round(missiles[i].x), '.');
             }
@@ -247,26 +270,31 @@ void sub_update_missiles(struct missile *missiles, int missile_count) {
     }
 }
 
+// handles mechanic to move on to next level, actually, it's only 2 steps :P
 void next_level() {
     level++;
     sched_wakeup(thread_create(&game, NULL));
 }
 
+// displays and runs the bonus points screen
 void bonus_points() {
     wattron(game_screen, COLOR_PAIR(5));
     mvwprintw(game_screen, FRAME_HEIGHT / 2 - 2, FRAME_WIDTH / 2 - 6, "BONUS POINTS");
 
+    // calculates and displays the bonus points for remaining player missiles
     int bonus_points_missiles = 0;
     char bonus_points_missiles_str[5];
     for (int i = 0; i < 3; i++)
         for (int j = bases[i].missile_count; j > 0; j--) {
-            bases[i].missile_count -= 1;
-            bonus_points_missiles += 5;
+            bases[i].missile_count -= 1; // remove missiles from bases as being counted
+            bonus_points_missiles += 5; // 5 points per missile
+
             wattron(game_screen, COLOR_PAIR(2));
             sprintf(bonus_points_missiles_str, "%i", bonus_points_missiles);
-            mvwprintw(game_screen, FRAME_HEIGHT / 2, FRAME_WIDTH / 2 - 6, bonus_points_missiles_str);
-            mvwaddch(game_screen, FRAME_HEIGHT / 2, FRAME_WIDTH / 2 - 2 + bonus_points_missiles / 5, '^');
+            mvwprintw(game_screen, FRAME_HEIGHT / 2, FRAME_WIDTH / 2 - 6, bonus_points_missiles_str); // display count
+            mvwaddch(game_screen, FRAME_HEIGHT / 2, FRAME_WIDTH / 2 - 2 + bonus_points_missiles / 5, '^'); // cute little display counting number of missiles left
             update_missile_count();
+
             wrefresh(game_screen);
             sleep_add(0, 100000000);
         }
@@ -274,22 +302,28 @@ void bonus_points() {
     refresh_high_score(game_screen);
     wrefresh(game_screen);
 
+    // calculates and displays the bonus points for remaining cities
     int bonus_points_cities = 0;
     char bonus_points_cities_str[5];
     for (int i = 0; i < 6; i++)
         if (cities[i].live) {
+            // erase the cities upon being counted
             mvwprintw(game_screen, FRAME_HEIGHT - 4, cities_x_pos[i], "       ");
             mvwprintw(game_screen, FRAME_HEIGHT - 3, cities_x_pos[i], "       ");
-            bonus_points_cities += 100;
+            bonus_points_cities += 100; // 100 points per city
+
             wattron(game_screen, COLOR_PAIR(2));
             sprintf(bonus_points_cities_str, "%i", bonus_points_cities);
-            mvwprintw(game_screen, FRAME_HEIGHT / 2 + 2, FRAME_WIDTH / 2 - 6, bonus_points_cities_str);
+            mvwprintw(game_screen, FRAME_HEIGHT / 2 + 2, FRAME_WIDTH / 2 - 6, bonus_points_cities_str); // display counted
+
+            // shows cute tiny version of the cities
             wattron(game_screen, COLOR_PAIR(3));
             mvwaddch(game_screen, FRAME_HEIGHT / 2 + 2, FRAME_WIDTH / 2 - 2 + (bonus_points_cities / 100) * 4 - 3, ACS_CKBOARD);
             wattron(game_screen, COLOR_PAIR(5));
             mvwaddch(game_screen, FRAME_HEIGHT / 2 + 2, FRAME_WIDTH / 2 - 2 + (bonus_points_cities / 100) * 4 + 1 - 3, ACS_CKBOARD);
             wattron(game_screen, COLOR_PAIR(3));
             mvwaddch(game_screen, FRAME_HEIGHT / 2 + 2, FRAME_WIDTH / 2 - 2 + (bonus_points_cities / 100) * 4 + 2 - 3, ACS_CKBOARD);
+
             wrefresh(game_screen);
             sleep_add(0, 300000000);
         }
@@ -300,12 +334,12 @@ void bonus_points() {
     sleep_add(1, 0);
 }
 
+// check if all hostile missiles are gone
 void check_end_missiles() {
     int live_count = 0;
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 10; i++)
         if (hostile_missiles[i].live)
             live_count++;
-    }
     if (live_count == 0) {
         sleep_add(1, 0);
         game_live = 0;
@@ -317,12 +351,12 @@ void check_end_missiles() {
     }
 }
 
+// check if all cities are gone
 void check_end_cities() {
     int live_count = 0;
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 6; i++)
         if (cities[i].live)
             live_count++;
-    }
     if (live_count == 0) {
         sleep_add(1, 0);
         game_live = 0;
@@ -333,16 +367,16 @@ void check_end_cities() {
     }
 }
 
+// the game loop, as what the name of the function suggests
 void game_loop() {
-    int counter = 0;
+    int counter = 0; // game tick counter, min: 0; max: 4
     while (game_live) {
-        sleep_add(0, 60000000 * 1 / pow(level * 0.06 + 0.95 ,2));
-        //sleep_add(0, 100000000);
+        sleep_add(0, 60000000 * 1 / pow(level * 0.06 + 0.95 ,2)); // speeds up the game as players progresses to higher levels
         if (counter < 4)
             counter++;
         else
             counter = 0;
-        if (!counter) {
+        if (!counter) { // updates the hostile missiles 1 in 4 ticks, so that player missiles moves 4 times faster than hostile ones
             sub_update_missiles(hostile_missiles, 10);
             check_end_cities();
             check_end_missiles();
@@ -353,36 +387,38 @@ void game_loop() {
     }
 }
 
+// moves the cursor from cur_x, cur_y to new_x, new_y
 void move_cursor(int *cur_x, int *cur_y, int new_x, int new_y) {
     wattron(game_screen, COLOR_PAIR(5));
-    if ((mvwinch(game_screen, *cur_y, *cur_x) & A_CHARTEXT) != ('x' & A_CHARTEXT)) {
-        mvwaddch(game_screen, *cur_y, *cur_x, ' ');
+    if ((mvwinch(game_screen, *cur_y, *cur_x) & A_CHARTEXT) != ('x' & A_CHARTEXT)) { // don't erase if there's something besides of the cursor
+        mvwaddch(game_screen, *cur_y, *cur_x, ' '); // erase old cursor
     }
     *cur_x = new_x;
     *cur_y = new_y;
-    mvwaddch(game_screen, *cur_y, *cur_x, '+');
+    mvwaddch(game_screen, *cur_y, *cur_x, '+'); // draw cursor at new position
     wrefresh(game_screen);
 }
 
+// input handler for game screen
 void game_screen_input() {
     int cur_x = FRAME_WIDTH / 2;
     int cur_y = (FRAME_HEIGHT - 7) / 2;
     wattron(game_screen, COLOR_PAIR(5));
     mvwaddch(game_screen, cur_y, cur_x, '+');
     int input;
-    MEVENT event;
+    // MEVENT event;
     input_set_thread();
     while (game_live) {
         input_set_thread();
         input = wgetch(game_screen);
         switch (input) {
-            case KEY_MOUSE:
+            /** case KEY_MOUSE:
                 if (getmouse(&event) == OK) {
                     if (event.x < FRAME_WIDTH && event.y < (FRAME_HEIGHT - 7)) {
                         move_cursor(&cur_x, &cur_y, event.x, event.y);
                     }
                   }
-                break;
+                break; */
             case KEY_LEFT:
                 if (cur_x > 0) {
                     move_cursor(&cur_x, &cur_y, cur_x - 1, cur_y);
@@ -424,8 +460,7 @@ void game_screen_input() {
 }
 
 void game() {
-    struct thread *input_handler = thread_create(&game_screen_input, NULL);
-    sched_wakeup(input_handler);
+    sched_wakeup(thread_create(&game_screen_input, NULL));
 
     LARGE_STAGE_1 = file_to_string("graphics/explosion-large-stage-1");
     LARGE_STAGE_2 = file_to_string("graphics/explosion-large-stage-2");
@@ -435,10 +470,8 @@ void game() {
     wattron(game_screen, A_BOLD);
     keypad(game_screen, TRUE);
     noecho();
-    //wmove(main_screen, 0, 0);
-    //werase(main_screen);
-    //erase();
 
+    // setup all bases
     for (int i = 0; i < 3; i++) {
         bases[i] = (struct base) {
             .x = bases_x_pos[i],
@@ -448,20 +481,21 @@ void game() {
         };
     }
 
-    for (int i = 0; i < 6; i++) {
-        if (level != 1)
-            break;
-        cities[i] = (struct city) {
-            .x = cities_x_pos[i],
-            .y = FRAME_HEIGHT - 4,
-            .live = 1
-        };
-    }
+    // setup all cities
+    if (level == 1) // only on level #1
+        for (int i = 0; i < 6; i++) {
+            cities[i] = (struct city) {
+                .x = cities_x_pos[i],
+                .y = FRAME_HEIGHT - 4,
+                .live = 1
+            };
+        }
 
     draw_screen_settings(game_screen, 0, cities);
     update_missile_count();
     wrefresh(game_screen);
 
+    // let the 2 threads run the game
     sched_wakeup(thread_create(&gen_hostile_missiles, NULL));
     sched_wakeup(thread_create(&game_loop, NULL));
 }
