@@ -9,16 +9,11 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
-#include <pthread.h>
-
-pthread_mutex_t lock;
 
 int start_explosion_pos[80][2];
 char *STAGE_1, *STAGE_2, *LARGE_STAGE_1, *LARGE_STAGE_2;
 int cities_x_pos[6] = {15, 30, 45, 70, 85, 100};
 int bases_x_pos[3] = {1, 56, 112};
-
-//enum drawMode {ERASE, DRAW};
 
 int score = 0;
 int high_score = 0;
@@ -29,28 +24,28 @@ void draw_fill(WINDOW *screen) {
             mvwaddch(screen, i, j, ACS_CKBOARD);
 }
 
-void draw_from_file(WINDOW *screen, int start_x, int start_y, char file[], enum drawMode mode) { // mode 1: draw 0: erase/draw with backgound
+void draw_from_file(WINDOW *screen, int start_x, int start_y, char file[], enum draw_mode mode) {
     FILE *fp = fopen(file, "r");
     char symbol;
     int x, y;
     wmove(screen, start_y, start_x);
-    while ((symbol = getc(fp)) != EOF) {
+    while ((symbol = getc(fp)) != EOF) { // draw char by char
         switch (symbol) {
-            case '.':
+            case '.': // blank
                 getyx(screen, y, x);
                 wmove(screen, y, x + 1);
                 break;
-            case '#':
+            case '#': // fill
                 if (mode == 1)
                     waddch(screen, ACS_CKBOARD);
                 else
                     waddch(screen, ' ');
                 break;
-            case '\n':
+            case '\n': // new line
                 getyx(screen, y, x);
                 wmove(screen, y + 1, start_x);
                 break;
-            default:
+            default: // ?!
                 fprintf(stderr, "Unexpected character found in %s: '%c'", file, symbol);
                 break;
         }
@@ -58,27 +53,27 @@ void draw_from_file(WINDOW *screen, int start_x, int start_y, char file[], enum 
     }
 }
 
-void draw_from_string(WINDOW *screen, int start_x, int start_y, char *line, enum drawMode mode) {
+void draw_from_string(WINDOW *screen, int start_x, int start_y, char *line, enum draw_mode mode) {
     int length = strlen(line);
     int x, y;
     wmove(screen, start_y, start_x);
     for (int i = 0; i < length; i++) {
         switch (line[i]) {
-            case '.':
+            case '.': // blank
                 getyx(screen, y, x);
                 wmove(screen, y, x + 1);
                 break;
-            case '#':
+            case '#': // fill
                 if (mode == 1)
                     waddch(screen, ACS_CKBOARD);
                 else
                     waddch(screen, ' ');
                 break;
-            case '\n':
+            case '\n': // new line
                 getyx(screen, y, x);
                 wmove(screen, y + 1, start_x);
                 break;
-            default:
+            default: // ?!
                 fprintf(stderr, "Unexpected character found: '%i'", line[i]);
                 break;
         }
@@ -90,7 +85,7 @@ char *file_to_string(char *file_name) {
     FILE *file = fopen(file_name, "r");
     fseek(file, 0, SEEK_END);
     int length = ftell(file);
-    char *string = malloc(length + 1);
+    char *string = malloc(length + 1); // leaving space for '\0'
     fseek(file, 0, SEEK_SET);
     fread(string, 1, length, file);
     string[length] = '\0';
@@ -115,21 +110,25 @@ void update_small_explosion_stage(WINDOW *screen, int from_missile, int to_missi
     sleep_add(0, 60000000);
 }
 
-// thread that handles the flashing part
 void flash_from_string(void *args) {
     struct string_flash_arg *string_flash_arg = args;
-    while (!current_thread->should_exit) { // run till prep screen ends, when should_exit will be set to false
+    while (!current_thread->should_exit) {
+        // print text
         wattron(string_flash_arg->screen, COLOR_PAIR(string_flash_arg->color_pair));
         mvwprintw(string_flash_arg->screen, string_flash_arg->y, string_flash_arg->x, string_flash_arg->text);
         wrefresh(string_flash_arg->screen);
+
         if (current_thread->should_exit)
             break;
         sleep_add(0, string_flash_arg->duration / 2 * 1000);
+
+        // hide text
         wattron(string_flash_arg->screen, COLOR_PAIR(string_flash_arg->color_pair));
         for (int i = 0; i < strlen(string_flash_arg->text) - 1; i++) {
             mvwprintw(string_flash_arg->screen, string_flash_arg->y, string_flash_arg->x + i, " ");
             wrefresh(string_flash_arg->screen);
         }
+
         if (current_thread->should_exit)
             break;
         sleep_add(0, string_flash_arg->duration / 2 * 1000);
@@ -190,28 +189,28 @@ void refresh_high_score(WINDOW *screen) {
 void carousel_from_string(void *arg) {
     struct carousel_arg *carousel_arg = arg;
     wrefresh(carousel_arg->screen);
-    int head_x = carousel_arg->start_x;
+    int head_x = carousel_arg->start_x; // keep record of the position of the first character on the screen
     while (!current_thread->should_exit) {
-        for (int i = 0; i < (FRAME_WIDTH - 1 - head_x) && i < strlen(carousel_arg->text); i++) {
-            if ((head_x + i) < carousel_arg->end_x)
+        for (int i = 0; i < (FRAME_WIDTH - 1 - head_x) && i < strlen(carousel_arg->text); i++) { // print the string char by char
+            if ((head_x + i) < carousel_arg->end_x) // skip if the char is out of the printable range
                 continue;
             wattron(carousel_arg->screen, COLOR_PAIR(carousel_arg->color_pair));
             mvwaddch(carousel_arg->screen, carousel_arg->y, head_x + i, carousel_arg->text[i]);
         }
-        if ((head_x + strlen(carousel_arg->text)) < (FRAME_WIDTH - 1)) {
+        if ((head_x + strlen(carousel_arg->text)) < (FRAME_WIDTH - 1)) { // see if the end of the string is on screen
             wattron(carousel_arg->screen, COLOR_PAIR(carousel_arg->color_pair));
-            mvwaddch(carousel_arg->screen, carousel_arg->y, head_x + strlen(carousel_arg->text), ' ');
+            mvwaddch(carousel_arg->screen, carousel_arg->y, head_x + strlen(carousel_arg->text), ' '); // remove the last char from the screen
         }
         wrefresh(carousel_arg->screen);
         sleep_add(0, 100000000);
-        head_x--;
-        if (head_x + strlen(carousel_arg->text) + 1 <= carousel_arg->end_x)
-            head_x = carousel_arg->start_x;
+        head_x--; // move the string to left
+        if (head_x + strlen(carousel_arg->text) + 1 <= carousel_arg->end_x) // if whole string is out of string
+            head_x = carousel_arg->start_x; // reset
     }
 }
 
 void draw_screen_settings(WINDOW *screen, int cities_only, struct city cities[6]) {
-    if (!cities_only) {
+    if (!cities_only) { // draw ground and base if not only to draw the cities
         wattron(screen, COLOR_PAIR(84));
         draw_from_file(screen, 0, FRAME_HEIGHT - 3, "graphics/ground", ERASE);
         wattron(screen, COLOR_PAIR(84));
@@ -219,7 +218,7 @@ void draw_screen_settings(WINDOW *screen, int cities_only, struct city cities[6]
             draw_from_file(screen, bases_x_pos[i], FRAME_HEIGHT - 6, "graphics/base", ERASE);
     }
     for (int i = 0; i < 6; i++) {
-        if (!cities[i].live)
+        if (!cities[i].live) // skips all cities that aren't live
             continue;
         wattron(screen, COLOR_PAIR(3));
         draw_from_file(screen, cities_x_pos[i], FRAME_HEIGHT - 4, "graphics/city-layer-1", DRAW);
