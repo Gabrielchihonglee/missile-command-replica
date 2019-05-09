@@ -389,10 +389,10 @@ void bonus_points() {
     for (int i = 0; i < 3; i++)
         for (int j = bases[i].missile_count; j > 0; j--) {
             bases[i].missile_count -= 1; // remove missiles from bases as being counted
-            bonus_points_missiles += score_multiplier(5, level); // 5 points per missile
+            bonus_points_missiles += 5; // 5 points per missile
 
             wattron(game_screen, COLOR_PAIR(2));
-            sprintf(bonus_points_missiles_str, "%i", bonus_points_missiles);
+            sprintf(bonus_points_missiles_str, "%i", score_multiplier(bonus_points_missiles, level));
             mvwprintw(game_screen, FRAME_HEIGHT / 2, FRAME_WIDTH / 2 - 6, bonus_points_missiles_str); // display count
             mvwaddch(game_screen, FRAME_HEIGHT / 2, FRAME_WIDTH / 2 - 2 + bonus_points_missiles / 5, '^'); // cute little display counting number of missiles left
             update_missile_count();
@@ -400,7 +400,7 @@ void bonus_points() {
             wrefresh(game_screen);
             sleep_add(0, 100000000);
         }
-    score += bonus_points_missiles;
+    score += score_multiplier(bonus_points_missiles, level);
     refresh_high_score(game_screen);
     wrefresh(game_screen);
 
@@ -412,10 +412,10 @@ void bonus_points() {
             // erase the cities upon being counted
             mvwprintw(game_screen, FRAME_HEIGHT - 4, cities_x_pos[i], "       ");
             mvwprintw(game_screen, FRAME_HEIGHT - 3, cities_x_pos[i], "       ");
-            bonus_points_cities += score_multiplier(100, level); // 100 points per city
+            bonus_points_cities += 100; // 100 points per city
 
             wattron(game_screen, COLOR_PAIR(2));
-            sprintf(bonus_points_cities_str, "%i", bonus_points_cities);
+            sprintf(bonus_points_cities_str, "%i", score_multiplier(bonus_points_cities, level));
             mvwprintw(game_screen, FRAME_HEIGHT / 2 + 2, FRAME_WIDTH / 2 - 6, bonus_points_cities_str); // display counted
 
             // shows cute tiny version of the cities
@@ -429,7 +429,7 @@ void bonus_points() {
             wrefresh(game_screen);
             sleep_add(0, 300000000);
         }
-    score += bonus_points_cities;
+    score += score_multiplier(bonus_points_cities, level);
     refresh_high_score(game_screen);
     wrefresh(game_screen);
 
