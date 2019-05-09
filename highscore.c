@@ -17,7 +17,7 @@ void draw_highscore_background(WINDOW *screen) {
 }
 
 void highscore() {
-    score = 6201;
+    score = 689777;
 
     WINDOW *score_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(score_screen, A_BOLD);
@@ -52,14 +52,10 @@ void highscore() {
 
         sleep_add(1, 0);
 
-        werase(score_screen);
-        draw_highscore_background(score_screen);
-        mvwprintw(score_screen, 12, FRAME_WIDTH / 2 - 5, "HIGH SCORES");
-
         // add user record into table if it gets into the first 8
 
         // determine the rank
-        int rank; // TODO: not a good way to handle the ranking, the whole part should be redo
+        int rank;
         for (int i = 7; i >= 0; i--) {
             if (atoi(entries[i][1]) < score)
                 continue;
@@ -69,8 +65,8 @@ void highscore() {
 
         // shift records to the end
         for (int i = 7; i > rank; i--) {
-            strcpy(entries[i][0], entries[i - 1][0]);
-            strcpy(entries[i][1], entries[i - 1][1]);
+            strcpy(entries[i][0], entries[i][0]);
+            strcpy(entries[i][1], entries[i][1]);
         }
 
         // add new record
@@ -87,6 +83,10 @@ void highscore() {
             fclose(highscore_file);
         }
     }
+
+    werase(score_screen);
+    draw_highscore_background(score_screen);
+    mvwprintw(score_screen, 12, FRAME_WIDTH / 2 - 5, "HIGH SCORES");
 
     // display high score table
     wattron(score_screen, COLOR_PAIR(4));
