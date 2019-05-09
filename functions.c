@@ -140,24 +140,6 @@ void flash_from_string(void *args) {
     free(string_flash_arg);
 }
 
-/**
-SCORE CALCULATION METHOD:
-Base Scores:
-    Missile: 25
-    Crazy Missile: 125
-    UFO / Fighter: 100
-    Unused missile: 5/missile
-    Unused city: 100/cities
-Score Multiplier:
-    Level 1/2: 1x
-    Level 3/4: 2x
-    Level 5/6: 3x
-    Level 7/8: 4x
-    Level 9/10: 5x
-    Level 11+: 6x
-Info from: https://strategywiki.org/wiki/Missile_Command/Walkthrough
-**/
-
 int score_multiplier(int score, int level) {
     switch (level) {
         case 1:
