@@ -1,6 +1,8 @@
 # missile-command-replica
 A missile command game replicated using C (An assessed assignment from SCC110 Term 3)
 
+[Demonstration video on YouTube](https://www.youtube.com/watch?v=Y9ji1MEX1L8)
+
 ## Replica (left) VS Original (right)
 Start screen:
 ![Start screen, Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/comparestart.gif?token=ABK3HLHBF4TIJT74FBXSN6K43TEIU)
