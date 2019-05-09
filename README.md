@@ -3,6 +3,8 @@ A missile command game replicated using C (An assessed assignment from SCC110 Te
 
 [Demonstration video on YouTube](https://www.youtube.com/watch?v=Y9ji1MEX1L8)
 
+My references to the "original": [Gameplay from YouTube 1](https://www.youtube.com/watch?v=nokIGklnBGY), [Gameplay from YouTube 2](https://www.youtube.com/watch?v=we4lY-GEzMk), [The End screen from YouTube](https://www.youtube.com/watch?v=RZ2Ezkp6TaM).
+
 ## Replica (left) VS Original (right)
 Start screen:
 ![Start screen, Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/comparestart.gif?token=ABK3HLHBF4TIJT74FBXSN6K43TEIU)
@@ -46,3 +48,4 @@ Info from: [Strategy Wiki](https://strategywiki.org/wiki/Missile_Command/Walkthr
 ## Todo
 - [ ] add "crazy" missiles
 - [ ] make the game more alike the original one?
+- [ ] maybe add sounds?
