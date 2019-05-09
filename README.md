@@ -6,3 +6,4 @@ A missile command game replicated using C (An assessed assignment from SCC110 Te
 ![Game screen, Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/comparegame.gif?token=ABK3HLDVD43MH2I7LR4GPCS43TEL2)
 ![Game screen (fighter jet), Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/comparefighterjet.gif?token=ABK3HLACKIOFGG2YO7YNSBC43TEKA)
 ![The End screen, Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/comparetheend.gif?token=ABK3HLH2XM452TBPJONP3ES43TENM)
+![Highscore screen, Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/comparehighscore.jpg?token=ABK3HLHIIJGZO4RGV3XKV4243TGKQ)
