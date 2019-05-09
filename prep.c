@@ -95,7 +95,7 @@ void prep() {
         .start_x = FRAME_WIDTH - 1,
         .end_x = 0,
         .y = FRAME_HEIGHT - 1,
-        .text = "GABRIEL (LANC UNI ID: 37526367) @ 2019     INSERT COINS     1 COIN 1 PLAY",
+        .text = "GABRIEL (LANC UNI ID: 37526367) @ 2019     GRADE A+ PLEASE?     INSERT COINS     1 COIN 1 PLAY",
         .color_pair = 84
     };
     struct thread *prep_screen_carousel_thread = thread_create(&carousel_from_string, carousel_arg);

@@ -281,12 +281,23 @@ void split_missile(struct missile *missile_pt) {
     }
 }
 
+void check_hit_special(float x, float y) {
+    if (fighter.live) {
+        if ((x - (fighter.x - 2)) < 16 && (y - (fighter.y - 2)) < 6) {
+            fighter.live = 0;
+            wattron(game_screen, COLOR_PAIR(2));
+            draw_from_file(game_screen, fighter.x, fighter.y, "graphics/fighter-jet", ERASE);
+        }
+    }
+}
+
 // updates fighter jet and ufo
 void update_specials() {
     if (fighter.live) {
         if (fighter.x > FRAME_WIDTH - 7) {
             fighter.live = 0;
         }
+        wattron(game_screen, COLOR_PAIR(2));
         draw_from_file(game_screen, fighter.x, fighter.y, "graphics/fighter-jet", ERASE);
         fighter.x += 1;
         draw_from_file(game_screen, fighter.x, fighter.y, "graphics/fighter-jet", DRAW);
@@ -321,8 +332,10 @@ void sub_update_missiles(struct missile *missiles, int missile_count) {
             }
 
             if (fabsf(missiles[i].x - missiles[i].tar_x) < 1 && fabsf(missiles[i].y - missiles[i].tar_y) < 1) { // check if it arrived at it's destination
-                if (missiles[i].type == PLAYER)
+                if (missiles[i].type == PLAYER) {
                     check_hit_hostile(missiles[i].x, missiles[i].y);
+                    check_hit_special(missiles[i].x, missiles[i].y);
+                }
                 else
                     check_hit_player(missiles[i].x, missiles[i].y);
                 kill_missile(&missiles[i]);
@@ -551,6 +564,7 @@ void game_screen_input() {
 // introduces the stage to user
 void stage_intro() {
     draw_screen_settings(game_screen, 0, cities);
+    refresh_high_score(game_screen);
     char level_text[5], score_x_text[5], speed_x_text[316];
     sprintf(level_text, "%i", level);
     sprintf(score_x_text, "%i", score_multiplier(1, level));
@@ -587,8 +601,6 @@ void game() {
     keypad(game_screen, TRUE);
     noecho();
 
-    stage_intro();
-
     fighter = (struct fighter) {0};
 
     // setup all bases
@@ -610,6 +622,8 @@ void game() {
                 .live = 1
             };
         }
+
+    stage_intro();
 
     draw_screen_settings(game_screen, 0, cities);
     update_missile_count();
