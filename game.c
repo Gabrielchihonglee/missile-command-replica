@@ -281,6 +281,7 @@ void split_missile(struct missile *missile_pt) {
     }
 }
 
+// check if fighter jet and ufo is hit
 void check_hit_special(float x, float y) {
     if (fighter.live) {
         if ((x - (fighter.x - 2)) < 16 && (y - (fighter.y - 2)) < 6) {
@@ -331,7 +332,7 @@ void sub_update_missiles(struct missile *missiles, int missile_count) {
                 split_missile(&missiles[i]);
             }
 
-            if (fabsf(missiles[i].x - missiles[i].tar_x) < 1 && fabsf(missiles[i].y - missiles[i].tar_y) < 1) { // check if it arrived at it's destination
+            if (fabsf(missiles[i].x - missiles[i].tar_x) <= 1 && fabsf(missiles[i].y - missiles[i].tar_y) <= 1) { // check if it arrived at it's destination
                 if (missiles[i].type == PLAYER) {
                     check_hit_hostile(missiles[i].x, missiles[i].y);
                     check_hit_special(missiles[i].x, missiles[i].y);
