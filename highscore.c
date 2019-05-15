@@ -17,8 +17,6 @@ void draw_highscore_background(WINDOW *screen) {
 }
 
 void highscore() {
-    score = 689777;
-
     WINDOW *score_screen = newwin(FRAME_HEIGHT, FRAME_WIDTH, 0, 0);
     wattron(score_screen, A_BOLD);
     wattron(score_screen, COLOR_PAIR(4));
@@ -64,9 +62,9 @@ void highscore() {
         }
 
         // shift records to the end
-        for (int i = 7; i > rank; i--) {
-            strcpy(entries[i][0], entries[i][0]);
-            strcpy(entries[i][1], entries[i][1]);
+        for (int i = 7; i >= rank; i--) {
+            strcpy(entries[i][0], entries[i - 1][0]);
+            strcpy(entries[i][1], entries[i - 1][1]);
         }
 
         // add new record
