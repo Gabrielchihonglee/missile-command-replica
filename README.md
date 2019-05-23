@@ -7,22 +7,22 @@ My references to the "original": [Gameplay from YouTube 1](https://www.youtube.c
 
 ## Replica (left) VS Original (right)
 Start screen:
-![Start screen, Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/comparestart.gif?token=ABK3HLHBF4TIJT74FBXSN6K43TEIU)
+![Start screen, Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/comparestart.gif)
 
 Prep screen:
-![Prep screen, Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/compareprep.gif?token=ABK3HLFDF56VH23XKUBFAX243TEMK)
+![Prep screen, Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/compareprep.gif)
 
 Game screen:
-![Game screen, Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/comparegame.gif?token=ABK3HLDVD43MH2I7LR4GPCS43TEL2)
+![Game screen, Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/comparegame.gif)
 
 Game screen, featuring the fighter jet:
-![Game screen (fighter jet), Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/comparefighterjet.gif?token=ABK3HLACKIOFGG2YO7YNSBC43TEKA)
+![Game screen (fighter jet), Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/comparefighterjet.gif)
 
 The End screen:
-![The End screen, Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/comparetheend.gif?token=ABK3HLH2XM452TBPJONP3ES43TENM)
+![The End screen, Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/comparetheend.gif)
 
 Highscore screen:
-![Highscore screen, Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/comparehighscore.jpg?token=ABK3HLEMCW7B7U5EQSMH37243TGRA)
+![Highscore screen, Original VS Replica](https://raw.githubusercontent.com/Gabrielchihonglee/missile-command-replica/master/media/comparehighscore.jpg)
 
 ## Score calculation method
 ### Base scores
